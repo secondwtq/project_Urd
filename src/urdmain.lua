@@ -94,6 +94,7 @@ function inst_parser_inf(inst)
 	local _f_blocks = string.gmatch(inst, '%([%d,;]*%)')
 	local pos_pols = _f_blocks()
 	local blocks = _f_blocks()
+	local thi_blocks = string.gmatch(str_test, '%<[%d,;]*%>')()
 
 	-- update police location
 	for id, x, y in string.gmatch(pos_pols, '(%d+),(%d+),(%d+);') do
@@ -101,6 +102,14 @@ function inst_parser_inf(inst)
 		local police = Util.findin(session_current.polices, function (o) return o.id == id end)
 		police:setpos(x, y)
 	end
+
+	-- update thief location
+	for id, x, y in string.gmatch(thi_blocks, '(%d+),(%d+),(%d+);') do
+		id, x, y = math.floor(tonumber(id)), math.floor(tonumber(x)), math.floor(tonumber(y))
+		local thief = Util.findin(session_current.thives, function (o) return o.id == id end)
+		thief:setpos(x, y)
+	end
+
 	-- update terrain status
 	for x, y in string.gmatch(blocks, '(%d+),(%d+);') do
 		x, y = math.floor(tonumber(x)), math.floor(tonumber(y))
