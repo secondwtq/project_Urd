@@ -12,6 +12,8 @@ Entity = object.object:new({
 
 	mov_id = 'D',
 
+	found = false,
+
 	move = function (self, dir) self.mov_id = dir end,
 
 	getpos = function (self) return self.pos end,

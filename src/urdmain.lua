@@ -6,6 +6,8 @@ directions = require 'directions'
 
 session_current = nil
 
+dofile('urdbeh.lua')
+
 -- interface, called to connect to server
 function init(port, init_inst, teamname)
 	print("UltraBt: Initing...")
@@ -80,6 +82,8 @@ function inst_parser_ini(inst)
 		-- changed in CPath
 	Utility.Urd.Pathfinding.pf_init(session_current.map_obj)
 
+	urdpol_init()
+
 	-- print debug data
 	print(session_current:debug_data())
 		-- changed in CPath
@@ -94,13 +98,14 @@ function inst_parser_inf(inst)
 	local _f_blocks = string.gmatch(inst, '%([%d,;]*%)')
 	local pos_pols = _f_blocks()
 	local blocks = _f_blocks()
-	local thi_blocks = string.gmatch(str_test, '%<[%d,;]*%>')()
+	local thi_blocks = string.gmatch(inst, '%<[%d,;]*%>')()
 
 	-- update police location
 	for id, x, y in string.gmatch(pos_pols, '(%d+),(%d+),(%d+);') do
 		id, x, y = math.floor(tonumber(id)), math.floor(tonumber(x)), math.floor(tonumber(y))
 		local police = Util.findin(session_current.polices, function (o) return o.id == id end)
 		police:setpos(x, y)
+		police.found = true
 	end
 
 	-- update thief location
@@ -108,6 +113,7 @@ function inst_parser_inf(inst)
 		id, x, y = math.floor(tonumber(id)), math.floor(tonumber(x)), math.floor(tonumber(y))
 		local thief = Util.findin(session_current.thives, function (o) return o.id == id end)
 		thief:setpos(x, y)
+		thief.found = true
 	end
 
 	-- update terrain status
@@ -139,27 +145,22 @@ function inst_parser_inf(inst)
 			session_current.map_obj:update_onsight(Utility.CellStruct(o:getpos()[1], o:getpos()[2]), entities.sight)
 		end)
 
-	-- changed in CPath
-	for k, v in ipairs(session_current.polices) do
-		local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-		Utility.Urd.Pathfinding.find(v:getcell(session_current.map_obj), session_current.map_obj:getcell(21, 21), cache)
-		if not cache:ended() then v:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
-	end
+	------------------------------------------------------------------------------------------------------------------------
+
+	-- -- changed in CPath
+	-- for k, v in ipairs(session_current.polices) do
+	-- 	local cache = Utility.Urd.Pathfinding.Pathfindingcache()
+	-- 	Utility.Urd.Pathfinding.find(v:getcell(session_current.map_obj), session_current.map_obj:getcell(6, 12), cache)
+	-- 	if not cache:ended() then v:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+	-- end
+
+	urdpol_tick()
+
+	------------------------------------------------------------------------------------------------------------------------
 
 	-- changed in CPath
 	print(Util.map_debug_data(session_current.map_obj))
 
-	-- for k, v in ipairs(session_current.polices) do
-	-- 	if Map.iscellpassable(session_current.map_obj:getneighborcell(v:getcell(session_current.map_obj), Directions.Up)) then v:move(Directions.Up)
-	-- 	elseif Map.iscellpassable(session_current.map_obj:getneighborcell(v:getcell(session_current.map_obj), Directions.Down)) then v:move(Directions.Down)
-	-- 	elseif Map.iscellpassable(session_current.map_obj:getneighborcell(v:getcell(session_current.map_obj), Directions.Left)) then v:move(Directions.Left)
-	-- 	elseif Map.iscellpassable(session_current.map_obj:getneighborcell(v:getcell(session_current.map_obj), Directions.Right)) then v:move(Directions.Right)
-	-- 	end
-	-- end
-
-	local _clock_, _time_ = os.clock(), os.time()
-	print(_clock, _clock_, _clock_-_clock)
-	print(_time, _time_, _time_-_time)
 
 	-- send move instruction
 	Env.Send(session_current:pass_mov(ntick, Env.INST_INIT))
