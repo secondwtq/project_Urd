@@ -25,6 +25,14 @@ btnode = lbobject:new({
 		execute = bt.func_empty,
 	})
 
+btnode_create_coroutine = function(co_foo)
+	if co_foo == nil then co_foo = bt.func_empty end
+
+	local node = btnode_coroutine:new()
+	node.co_execute = co_foo
+	return node
+end
+
 btnode_coroutine = btnode:new({
 		_coroutine = nil,
 
@@ -164,7 +172,7 @@ btnode_priority_selector = btnode_coroutine_ctrl:new({
 		end,
 	})
 
-btnode_create_sequential = function () return btnode_sequential:new() end
+btnode_create_priority = function () return btnode_priority_selector:new() end
 
 btnode_sequential = btnode_coroutine_ctrl:new({
 
@@ -173,6 +181,7 @@ btnode_sequential = btnode_coroutine_ctrl:new({
 		for i, node in ipairs(self.children) do 
 			while true do
 				local status = node:execute(args)
+				print(status)
 
 				if status == bt.state.SUCCESS then
 					break
@@ -189,15 +198,7 @@ btnode_sequential = btnode_coroutine_ctrl:new({
 
 	})
 
-btnode_create_condition = function (cond, check)
-	if check == nil then check = true end
-	local node = btnode_condition:new()
-
-	node._condition = cond
-	node._check = check
-
-	return node
-end
+btnode_create_sequential = function () return btnode_sequential:new() end
 
 btnode_condition = btnode:new({
 	_condition = function(args) return true end,
@@ -211,3 +212,43 @@ btnode_condition = btnode:new({
 		end
 	end
 })
+
+btnode_create_condition = function (cond, check)
+	if check == nil then check = true end
+	local node = btnode_condition:new()
+
+	node._condition = cond
+	node._check = check
+
+	return node
+end
+
+btnode_dec_cond = btnode:new({
+	_node = nil,
+	_cond_node = nil,
+
+	_fail_ret = bt.state.SUCCESS,
+
+	init = function (self, args)
+		self.foo_end = self._node.foo_end
+		self.init = self._node.init
+		self._node:init(args)
+	end,
+
+	execute = function (self, args)
+		local cond = self._cond_node:execute(args)
+		if cond == bt.state.SUCCESS then
+			do return self._node:execute(args) end
+		else return self._fail_ret end
+	end
+})
+
+btnode_createdec_cond = function (dnode, cond, failret)
+	if failret == nil then failret = btnode_dec_cond._fail_ret end
+
+	local node = btnode_dec_cond:new()
+
+	node._node, node._cond_node, node._fail_ret = dnode, cond, failret
+
+	return node
+end

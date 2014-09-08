@@ -44,11 +44,14 @@ __DEFINED = __DEFINED or {
 
 EXTNAME = '.lua'
 
+ID_IMPORT = "IMPORT"
+
 _argparser = argparse.ArgumentParser(prog='lua-pystiller', 
 										description=sys.modules[__name__].__doc__,
 										formatter_class=argparse.RawDescriptionHelpFormatter)
 _argparser.add_argument('-i', nargs=1, dest='inputfile', help='define the input file.', required=True)
 _argparser.add_argument('-o', nargs=1, dest='outputfile', help="define the output file.")
+_argparser.add_argument('-a', nargs=1, dest='id_import', help='define the identifier of module import.')
 
 class dependency_node(object):
 
@@ -141,7 +144,30 @@ def gen_list(root):
 		ret.extend(_ret[level])
 	return ret
 
+def parse_import(code, name):
+	global node_root, ID_IMPORT
+	print ("\tparsing imports of %s ..." % name, file=sys.stderr)
+	pat = re.compile(r"^.*"+ID_IMPORT+r"[( ]['\"]([a-zA-Z0-9._/-]+)['\"]")
+
+	ret = code
+
+	for line in code.splitlines():
+		match = pat.search(line)
+		if match != None:
+			if (line.find(COMMENT_MARK) == -1) or (line.find(COMMENT_MARK) < line.find(ID_IMPORT)):
+				module_name = match.groups()[0]
+				print ("import %s required by %s." % (module_name, name), file=sys.stderr)
+
+				next_code, next_name = None, module_name
+				with open(next_name, 'r') as fp:
+					next_code = fp.read()
+
+				next_code = parse_import(next_code, next_name)
+				ret = ret.replace(line, next_code)
+	return ret
+
 def distillify(node):
+	node.code = parse_import(node.code, node.name)
 	ret = """
 __DEFINED["%(name)s"] = (function()
 %(code)s
@@ -154,6 +180,10 @@ def main():
 
 	input_filename = args.inputfile[0] # "urdmain.lua"
 	output_filename = args.outputfile[0]
+
+	global ID_IMPORT
+	if args.id_import:
+		ID_IMPORT = args.id_import[0]
 
 	input_modulename = os.path.splitext(input_filename)[0]
 	global node_root
@@ -170,6 +200,7 @@ def main():
 
 	ret += HR
 
+	node_root.code = parse_import(node_root.code, node_root.name)
 	ret += node_root.code
 
 	if output_filename:
