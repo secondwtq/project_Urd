@@ -81,11 +81,8 @@ if we_are_police() then
 
 			print("entering catch mode...")
 
-			local target = get_theif_pos(0)
-
-			print("entering catch mode...")
-
 			while true do
+				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
 				Utility.Urd.Pathfinding.find(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target)), cache)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
