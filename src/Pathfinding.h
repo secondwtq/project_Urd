@@ -14,6 +14,8 @@ namespace Pathfinding {
 
 	bool find(CellClass *src, CellClass *dest, Pathfindingcache *cache);
 
+	bool find_8(CellClass *src, CellClass *dest, Pathfindingcache *cache);
+
 	class Pathfindingcache {
 		public:
 			std::size_t idx = 0;

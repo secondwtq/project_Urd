@@ -54,8 +54,6 @@ end
 function urdpol_init()
 if we_are_police() then
 	for i, char in ipairs(session_current.polices) do
-		print("initing brain...")
-		char.brain = btnode_create_sequential()
 
 		local node_search = btnode_create_coroutine(function (self, args)
 			local obj = args.obj
@@ -68,7 +66,7 @@ if we_are_police() then
 
 			while true do
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				Utility.Urd.Pathfinding.find(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(search_target)), cache)
+				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(search_target)), cache)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
 			end
@@ -84,7 +82,7 @@ if we_are_police() then
 			while true do
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				Utility.Urd.Pathfinding.find(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target)), cache)
+				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target)), cache)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
 			end
@@ -92,13 +90,14 @@ if we_are_police() then
 			return bt.state.SUCCESS
 		end)
 
-		char.brain
+		print("initing brain...")
+
+	char.brain =
+		btnode_create_sequential()
 			:add_child(
-				btnode_createdec_cond(node_search, btnode_create_condition(thief_found, false))
-			)
+				btnode_createdec_cond(node_search, btnode_create_condition(thief_found, false)))
 			:add_child(
-				node_catch
-			)
+				node_catch)
 
 		char.brain:init()
 		char.brain_activated = true

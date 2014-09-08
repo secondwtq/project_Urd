@@ -55,6 +55,7 @@ void RegisterInterface(lua_State *L) {
 					addFunction("pf_init", &Pathfinding::pf_init).
 					addFunction("pf_dispose", &Pathfinding::pf_dispose).
 					addFunction("find", &Pathfinding::find).
+					addFunction("find_8", &Pathfinding::find_8).
 					beginClass<Pathfinding::Pathfindingcache>("Pathfindingcache").
 						addConstructor<void (*)()>().
 						addFunction("next", &Pathfinding::Pathfindingcache::next).

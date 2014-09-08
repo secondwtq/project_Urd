@@ -223,6 +223,10 @@ btnode_create_condition = function (cond, check)
 	return node
 end
 
+-- when executed
+--		execute _cond_node
+--		if SUCCEED, execute _node and return status
+--		if FAILED, return _fail_ret(default SUCCESS)
 btnode_dec_cond = btnode:new({
 	_node = nil,
 	_cond_node = nil,
