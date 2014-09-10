@@ -23,6 +23,12 @@ btnode = lbobject:new({
 		foo_end_user = bt.func_empty,
 
 		execute = bt.func_empty,
+
+		foo_end_user = bt.func_empty,
+
+		foo_end = function(self, args)
+			self:foo_end_user(args)
+		end,
 	})
 
 btnode_create_coroutine = function(co_foo)
@@ -51,8 +57,9 @@ btnode_coroutine = btnode:new({
 		end,
 
 		foo_end = function(self, args)
-			self._coroutine = nil
 			self._coroutine = coroutine.create(self.co_execute)
+			self:co_init(args)
+
 			self:foo_end_user(args)
 		end,
 	})
@@ -84,6 +91,11 @@ btnode_coroutine_ctrl = btnode_coroutine:new({
 				node:init(args)
 			end
 			btnode_coroutine.init(self, args)
+		end,
+
+		foo_end = function (self, args)
+			for i, node in ipairs(self.children) do node:foo_end(args) end
+			btnode_coroutine.foo_end(self, args)
 		end,
 	})
 
@@ -181,11 +193,13 @@ btnode_sequential = btnode_coroutine_ctrl:new({
 		for i, node in ipairs(self.children) do 
 			while true do
 				local status = node:execute(args)
-				print(status)
+				-- print(status)
 
 				if status == bt.state.SUCCESS then
+					node:foo_end(args)
 					break
 				elseif status == bt.state.FAILURE then
+					self:foo_end(args)
 					return status
 				end
 
@@ -193,12 +207,67 @@ btnode_sequential = btnode_coroutine_ctrl:new({
 			end
 		end
 
+		self:foo_end(args)
 		return bt.state.SUCCESS
 	end,
 
 	})
 
 btnode_create_sequential = function () return btnode_sequential:new() end
+
+btnode_repeat = btnode_coroutine:new({
+
+	_loop_count = 1,
+
+	init = function(self, args)
+		btnode_coroutine.init(self, args)
+		self._rep_node:init(args)
+	end,
+
+	co_execute = function (self, args)
+
+		local i = 0
+		while true do
+			if i >= self._loop_count then break end
+			i = i + 1
+
+			if i ~= 0 then self._rep_node:init(args) end
+			while true do
+				local status = self._rep_node:execute(args)
+
+				if status == bt.state.SUCCESS then
+					self._rep_node:foo_end(args)
+					break
+				elseif status == bt.state.FAILURE then
+					self:foo_end(args)
+					do return status end
+				end
+
+				coroutine.yield(status)
+
+			end
+
+		end
+
+		self:foo_end(args)
+		return bt.state.SUCCESS
+
+	end,
+
+	foo_end = function(self, args)
+		self._rep_node:foo_end(args)
+		btnode_coroutine.foo_end(self, args)
+	end,
+
+	})
+
+btnode_create_repeat = function (count, node)
+	local ret = btnode_repeat:new()
+
+	ret._loop_count, ret._rep_node = count, node
+
+	return ret
+end
 
 btnode_condition = btnode:new({
 	_condition = function(args) return true end,
