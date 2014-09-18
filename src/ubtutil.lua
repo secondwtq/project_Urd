@@ -18,6 +18,10 @@ ubtutil.distance = function (pos0, pos1)
 	return math.max(math.abs(pos0[1]-pos1[1]), math.abs(pos0[2]-pos1[2]))
 end
 
+ubtutil.add_2d_pos = function (pos0, pos1)
+	return { pos0[1] + pos1[1], pos0[2] + pos1[2] }
+end
+
 ubtutil.map_debug_data = function(map)
 		local r = LCT.c.RED .. 'Map Debug Data\n' .. LCT.c.RESET
 		.. string.format('Map width: %d, height: %d\n', map.width, map.height)

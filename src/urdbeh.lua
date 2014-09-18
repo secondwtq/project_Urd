@@ -1,3 +1,5 @@
+dofile('lunalogger.lua')
+
 function we_are_police()
 	return Env.INST_INIT == 'POL' end
 
@@ -99,7 +101,11 @@ if we_are_police() then
 			:add_child(
 				node_catch)
 
-		char.brain:init()
+		logger = lloger:new()
+		logger:init()
+		logger.name_logger = 'BEH_LOGGER'
+
+		char.brain:init({logger = logger})
 		char.brain_activated = true
 	end
 end

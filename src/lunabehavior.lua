@@ -1,11 +1,5 @@
-lbobject = { }
-
-lbobject.new = function (self, t)
-	r = t or { }
-	setmetatable(r, self)
-	self.__index = self
-	return r
-end
+object = require('object')
+dofile('lunalogger.lua')
 
 bt = { }
 
@@ -13,11 +7,12 @@ bt.func_empty = function(self, args) end
 
 bt.state = { SUCCESS = 0, RUNNING = 1, FAILURE = 2, UNKNOWN = 3 }
 
-btnode = lbobject:new({
+btnode = object.object:new({
 		init = function (self, args)
-			self:init_user(args) end,
-		foo_end = function (self, args)
-			self:foo_end(args) end,
+			self:init_logger(args)
+
+			self:init_user(args)
+		end,
 
 		init_user = bt.func_empty,
 		foo_end_user = bt.func_empty,
@@ -27,8 +22,27 @@ btnode = lbobject:new({
 		foo_end_user = bt.func_empty,
 
 		foo_end = function(self, args)
+			self._logger:log(LLOG_DEBUG("btnode foo_end ending ", self.type_node, self))
 			self:foo_end_user(args)
 		end,
+
+		type_node = '[DEFAULT_NODE]',
+
+		name = 'DEFAULT_NODE_NAME',
+
+		_logger = nil,
+
+		init_logger = function (self, args)
+			if args.logger == nil then
+				if self._logger ~= nil then
+					args.logger = self._logger
+				else
+					args.logger = lloger:new()
+					args.logger:init()
+				end
+			end
+			self._logger = args.logger
+		end
 	})
 
 btnode_create_coroutine = function(co_foo)
@@ -45,7 +59,12 @@ btnode_coroutine = btnode:new({
 		co_execute = bt.func_empty,
 		co_init = bt.func_empty,
 
+		type_node = '[COROUTINE_NODE]',
+
 		init = function(self, args)
+			self:init_logger(args)
+
+			self._logger:log(LLOG_DEBUG("btnode_coroutine init initing ", self.type_node, self))
 			self._coroutine = coroutine.create(self.co_execute)
 			self:co_init(args)
 			self:init_user(args)
@@ -57,6 +76,7 @@ btnode_coroutine = btnode:new({
 		end,
 
 		foo_end = function(self, args)
+			self._logger:log(LLOG_DEBUG("btnode_coroutine foo_end ending ", self.type_node, self))
 			self._coroutine = coroutine.create(self.co_execute)
 			self:co_init(args)
 
@@ -66,6 +86,9 @@ btnode_coroutine = btnode:new({
 
 btnode_ctrl = btnode:new({
 		children = { },
+
+		type_node = '[CONTROL_NODE]',
+
 		add_child = function (self, child)
 			if #(self.children) == 0 then self.children = { } end
 			table.insert(self.children, child)
@@ -73,6 +96,8 @@ btnode_ctrl = btnode:new({
 		end,
 
 		init = function(self, args)
+			self:init_logger(args)
+
 			for i, node in ipairs(self.children) do node:init(args) end
 			self:init_user(args)
 		end,
@@ -86,6 +111,8 @@ btnode_ctrl = btnode:new({
 btnode_coroutine_ctrl = btnode_coroutine:new({
 		children = { }, add_child = btnode_ctrl.add_child,
 
+		type_node = '[COROUTINE_CONTROL]',
+
 		init = function(self, args)
 			for i, node in ipairs(self.children) do
 				node:init(args)
@@ -94,6 +121,7 @@ btnode_coroutine_ctrl = btnode_coroutine:new({
 		end,
 
 		foo_end = function (self, args)
+			self._logger:log(LLOG_DEBUG("btnode_coroutine_ctrl foo_end ending ", self.type_node, self))
 			for i, node in ipairs(self.children) do node:foo_end(args) end
 			btnode_coroutine.foo_end(self, args)
 		end,
@@ -101,6 +129,8 @@ btnode_coroutine_ctrl = btnode_coroutine:new({
 
 btnode_parallel = btnode_ctrl:new({
 		statuses = { },
+
+		type_node = '[CONTROL_PARALLEL]',
 
 		init_user = function(self, args)
 			for i, node in ipairs(self.children) do
@@ -127,6 +157,8 @@ btnode_parallel = btnode_ctrl:new({
 	})
 
 btnode_priority_selector = btnode_coroutine_ctrl:new({
+
+		type_node = '[CONTROL_PRIORITY]',
 
 		_get_first_available_node = function (self, args, start)
 			local node_current = nil
@@ -188,6 +220,8 @@ btnode_create_priority = function () return btnode_priority_selector:new() end
 
 btnode_sequential = btnode_coroutine_ctrl:new({
 
+	type_node = '[CONTROL_SEQUENTIAL]',
+
 	co_execute = function (self, args)
 
 		for i, node in ipairs(self.children) do 
@@ -196,9 +230,11 @@ btnode_sequential = btnode_coroutine_ctrl:new({
 				-- print(status)
 
 				if status == bt.state.SUCCESS then
+					print("btnode_sequential node success ", node.type_node, node)
 					node:foo_end(args)
 					break
 				elseif status == bt.state.FAILURE then
+					print("btnode_sequential node failure ", node.type_node, node)
 					self:foo_end(args)
 					return status
 				end
@@ -219,9 +255,13 @@ btnode_repeat = btnode_coroutine:new({
 
 	_loop_count = 1,
 
+	type_node = '[CONTROL_REPEAT]',
+
 	init = function(self, args)
 		btnode_coroutine.init(self, args)
-		self._rep_node:init(args)
+		-- print("repeat_node init _rep_node", self._rep_node, self._rep_node.co_execute)
+		-- self._rep_node:init(args)
+		-- print("repeat_node rep_node init finished.")
 	end,
 
 	co_execute = function (self, args)
@@ -230,15 +270,22 @@ btnode_repeat = btnode_coroutine:new({
 		while true do
 			if i >= self._loop_count then break end
 			i = i + 1
+			self._logger:log(LLOG_DEBUG("repeat_node looping ", i, self))
 
-			if i ~= 0 then self._rep_node:init(args) end
+			if i ~= 0 then
+				self._logger:log(LLOG_DEBUG("repeat_node initing node, _rep_node", self._rep_node, self._rep_node.co_execute, " self ", self))
+				self._rep_node:init(args)
+				self._logger:log(LLOG_DEBUG("repeat_node loop init finished ", self))
+			end
 			while true do
 				local status = self._rep_node:execute(args)
 
 				if status == bt.state.SUCCESS then
+					print("repeat success")
 					self._rep_node:foo_end(args)
 					break
 				elseif status == bt.state.FAILURE then
+					self._logger:log("repeat failure")
 					self:foo_end(args)
 					do return status end
 				end
@@ -255,6 +302,7 @@ btnode_repeat = btnode_coroutine:new({
 	end,
 
 	foo_end = function(self, args)
+		self._logger:log(LLOG_DEBUG("btnode_repeat foo_end ending ", self.type_node, self))
 		self._rep_node:foo_end(args)
 		btnode_coroutine.foo_end(self, args)
 	end,
@@ -272,6 +320,8 @@ end
 btnode_condition = btnode:new({
 	_condition = function(args) return true end,
 	_check = true,
+
+	type_node = '[CONTROL_CONDITION]',
 
 	execute = function (self, args)
 		if self:_condition(args) == self._check then
@@ -302,10 +352,15 @@ btnode_dec_cond = btnode:new({
 
 	_fail_ret = bt.state.SUCCESS,
 
+	type_node = '[DEC_COND]',
+
 	init = function (self, args)
-		self.foo_end = self._node.foo_end
-		self.init = self._node.init
+		-- self.init = self._node.init
 		self._node:init(args)
+	end,
+
+	foo_end = function (self, args)
+		return self._node:foo_end(args)
 	end,
 
 	execute = function (self, args)

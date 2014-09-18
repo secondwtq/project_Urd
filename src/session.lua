@@ -14,6 +14,34 @@ Entity = object.object:new({
 
 	found = false,
 
+	previous_position_single = nil,
+
+	get_move_direction_vector_single = function (self)
+		if self.previous_position_single ~= nil then
+			local move_offset_x = self.pos[1] - self.previous_position_single[1]
+			local move_offset_y = self.pos[2] - self.previous_position_single[2]
+
+			if move_offset_x == 0 and move_offset_y == 0 then return { 0, 0 } end
+
+			if move_offset_x >= 0 and move_offset_y >= 0 then
+				if move_offset_x > move_offset_y then return { 1, 0 }
+				else return { 0, 1 } end
+			end
+			if move_offset_x < 0 and move_offset_y > 0 then
+				if (-move_offset_x) > move_offset_y then return { -1, 0 }
+				else return { 0, 1 } end
+			end
+			if move_offset_x > 0 and move_offset_y < 0 then
+				if move_offset_x > (-move_offset_y) then return { 1, 0 }
+				else return { 0, -1 } end
+			end
+			if move_offset_x < 0 and move_offset_y < 0 then
+				if (-move_offset_x) > (-move_offset_y) then return { -1, 0 }
+				else return { 0, -1 } end
+			end
+		end
+	end,
+
 	move = function (self, dir) self.mov_id = dir end,
 
 	getpos = function (self) return self.pos end,
@@ -56,7 +84,7 @@ session.SessionObject = object.object:new({
 	polices = { },
 
 	thives = { },
-
+	
 	before_update = function (self)
 		Util.findin(self.polices, function (o) o.mov_id = 'T' end)
 		Util.findin(self.thives, function (o) o.mov_id = 'T' end)
