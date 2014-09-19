@@ -17,28 +17,30 @@ Entity = object.object:new({
 	previous_position_single = nil,
 
 	get_move_direction_vector_single = function (self)
-		if self.previous_position_single ~= nil then
-			local move_offset_x = self.pos[1] - self.previous_position_single[1]
-			local move_offset_y = self.pos[2] - self.previous_position_single[2]
+		if self.previous_position_single == nil then
+			self.previous_position_single = { self.pos[1], self.pos[2] }
+		end
 
-			if move_offset_x == 0 and move_offset_y == 0 then return { 0, 0 } end
+		local move_offset_x = self.pos[1] - self.previous_position_single[1]
+		local move_offset_y = self.pos[2] - self.previous_position_single[2]
 
-			if move_offset_x >= 0 and move_offset_y >= 0 then
-				if move_offset_x > move_offset_y then return { 1, 0 }
-				else return { 0, 1 } end
-			end
-			if move_offset_x < 0 and move_offset_y > 0 then
-				if (-move_offset_x) > move_offset_y then return { -1, 0 }
-				else return { 0, 1 } end
-			end
-			if move_offset_x > 0 and move_offset_y < 0 then
-				if move_offset_x > (-move_offset_y) then return { 1, 0 }
-				else return { 0, -1 } end
-			end
-			if move_offset_x < 0 and move_offset_y < 0 then
-				if (-move_offset_x) > (-move_offset_y) then return { -1, 0 }
-				else return { 0, -1 } end
-			end
+		if move_offset_x == 0 and move_offset_y == 0 then return { 0, 0 } end
+
+		if move_offset_x >= 0 and move_offset_y >= 0 then
+			if move_offset_x > move_offset_y then return { 1, 0 }
+			else return { 0, 1 } end
+		end
+		if move_offset_x < 0 and move_offset_y > 0 then
+			if (-move_offset_x) > move_offset_y then return { -1, 0 }
+			else return { 0, 1 } end
+		end
+		if move_offset_x > 0 and move_offset_y < 0 then
+			if move_offset_x > (-move_offset_y) then return { 1, 0 }
+			else return { 0, -1 } end
+		end
+		if move_offset_x < 0 and move_offset_y < 0 then
+			if (-move_offset_x) > (-move_offset_y) then return { -1, 0 }
+			else return { 0, -1 } end
 		end
 	end,
 

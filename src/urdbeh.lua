@@ -124,5 +124,8 @@ if we_are_police() then
 		end
 
 	end
+
+	local t = session_current.thives[1]:get_move_direction_vector_single()
+	print("Thief 0 move vector: ", t[1], t[2])
 end
 end

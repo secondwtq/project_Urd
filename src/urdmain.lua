@@ -112,6 +112,7 @@ function inst_parser_inf(inst)
 	for id, x, y in string.gmatch(thi_blocks, '(%d+),(%d+),(%d+);') do
 		id, x, y = math.floor(tonumber(id)), math.floor(tonumber(x)), math.floor(tonumber(y))
 		local thief = Util.findin(session_current.thives, function (o) return o.id == id end)
+		thief.previous_position_single = { thief.pos[1], thief.pos[2] }
 		thief:setpos(x, y)
 		thief.found = true
 	end
