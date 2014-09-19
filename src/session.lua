@@ -30,15 +30,15 @@ Entity = object.object:new({
 			if move_offset_x > move_offset_y then return { 1, 0 }
 			else return { 0, 1 } end
 		end
-		if move_offset_x < 0 and move_offset_y > 0 then
+		if move_offset_x <= 0 and move_offset_y >= 0 then
 			if (-move_offset_x) > move_offset_y then return { -1, 0 }
 			else return { 0, 1 } end
 		end
-		if move_offset_x > 0 and move_offset_y < 0 then
+		if move_offset_x >= 0 and move_offset_y <= 0 then
 			if move_offset_x > (-move_offset_y) then return { 1, 0 }
 			else return { 0, -1 } end
 		end
-		if move_offset_x < 0 and move_offset_y < 0 then
+		if move_offset_x <= 0 and move_offset_y <= 0 then
 			if (-move_offset_x) > (-move_offset_y) then return { -1, 0 }
 			else return { 0, -1 } end
 		end
