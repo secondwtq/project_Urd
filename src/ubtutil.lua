@@ -18,8 +18,16 @@ ubtutil.distance = function (pos0, pos1)
 	return math.max(math.abs(pos0[1]-pos1[1]), math.abs(pos0[2]-pos1[2]))
 end
 
-ubtutil.add_2d_pos = function (pos0, pos1)
+ubtutil.add_2dpos = function (pos0, pos1)
 	return { pos0[1] + pos1[1], pos0[2] + pos1[2] }
+end
+
+ubtutil.mul_2dpos = function (pos0, pos1)
+	if type(pos1) == 'table' then
+		return { pos0[1]*pos1[1], pos0[2]*pos1[2] }
+	elseif type(pos1) == 'number' then
+		return { pos0[1]*pos1, pos0[2]*pos1 }
+	end
 end
 
 ubtutil.map_debug_data = function(map)

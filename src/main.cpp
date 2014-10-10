@@ -138,7 +138,7 @@ void init() {
 	#else
 		lua_pushboolean(L, true);
 		lua_setglobal(L, "_URD_HOSTPLATFORM_ISPOSIX_");
-		
+
 		lua_pushstring(L, "UNKNOWN");
 	#endif
 	lua_setglobal(L, "_URD_HOSTPLATFORM_");
@@ -203,7 +203,7 @@ void parse_cmd_args(int argc, const char *argv[]) {
 
 	//	read and store options
 	_argparser::variables_map _argparser_vm;
-	_argparser::store(_argparser::command_line_parser(argc, argv).options(_argparser_desc).positional(pos_desc).run(), 
+	_argparser::store(_argparser::command_line_parser(argc, argv).options(_argparser_desc).positional(pos_desc).run(),
 						_argparser_vm);
 	_argparser::notify(_argparser_vm);
 

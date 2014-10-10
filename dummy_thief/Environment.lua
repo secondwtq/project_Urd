@@ -1,10 +1,10 @@
 _ret = { }
 
-print(_URD_ENVTYPE_)
+print(_URD_HOSTTYPE_)
 
 pkgutil = require 'ubtpkgutil'
 
-if _URD_ENVTYPE_ == 'LUATICPY' then
+if _URD_HOSTTYPE_ == 'LUATICPY' then
 
 py = pkgutil.Require 'python'
 
@@ -14,7 +14,7 @@ _ret.Send = _pg.sock.send
 _ret.Restart = _pg.lua_restart
 _ret.SendTo = _pg.sock.sendto
 
-elseif _URD_ENVTYPE_ == 'LUABRIDG' then
+elseif _URD_HOSTTYPE_ == 'LUABRIDG' then
 
 _ret.Exit = Utility.Network.Urd.lua_break_test
 _ret.Send = Utility.Network.Urd.socket_send
