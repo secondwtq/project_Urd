@@ -62,13 +62,9 @@ function get_furthest_cell(current, direction)
 
 	local cur = current
 	local prev_cur = nil
-	print ("ENTERING LOOP")
 	while true do
 		prev_cur = cur
-		print ('LOOPING')
 		cur = Util.add_2dpos(cur, direction)
-		print ('ADDED')
-		print ("trying cell ", cur[1], cur[2])
 
 		local cell = session_current.map_obj:getcell(unpack(cur))
 		if (not cell) or (not cell:ispassable()) then
@@ -76,6 +72,22 @@ function get_furthest_cell(current, direction)
 		end
 	end
 
+end
+
+function set_all_unpassable(set, except)
+	for i, v in ipairs(set) do
+		if v ~= except then
+			session_current.map_obj:getcell(table.unpack(v.pos)):setunpassable(true)
+		end
+	end
+end
+
+function reset_unpassable(set)
+	for i, v in ipairs(set) do
+		if v ~= except then
+			session_current.map_obj:getcell(table.unpack(v.pos)):setunpassable(false)
+		end
+	end
 end
 
 function urdpol_init()
@@ -93,7 +105,9 @@ if we_are_police() then
 
 			while true do
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
+				set_all_unpassable(session_current.polices, obj)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(search_target)), cache)
+				reset_unpassable(session_current.polices)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
 			end
@@ -109,7 +123,9 @@ if we_are_police() then
 			while true do
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
+				set_all_unpassable(session_current.polices, obj)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target)), cache)
+				reset_unpassable(session_current.polices)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
 			end
@@ -141,12 +157,15 @@ if we_are_police() then
 			:add_child(
 				btnode_createdec_cond(node_search, btnode_create_condition(thief_found, false)))
 			:add_child(
-				btnode_create_sequential()
+				btnode_create_priority()
 					:add_child(
-						btnode_createdec_cond(node_catch_further, btnode_create_condition(function () return char:is_in_front_of(session_current.thives[1]) end, false))
+						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_on_side_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHSIDE")
 					)
 					:add_child(
-						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_in_front_of(session_current.thives[1]) end, true))
+						btnode_createdec_cond(node_catch_further, btnode_create_condition(function () return (char:is_in_front_of(session_current.thives[1])) and not char:is_on_side_of(session_current.thives[1]) end, false), bt.state.FAILURE, "CATCHFUR")
+					)
+					:add_child(
+						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_in_front_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHFRONT")
 					)
 			)
 		)
@@ -173,6 +192,7 @@ if we_are_police() then
 			end
 		end
 
+		print("Is on side of thief: ", char:is_on_side_of(session_current.thives[1]))
 		print("Is in front of thief: ", char:is_in_front_of(session_current.thives[1]))
 
 	end

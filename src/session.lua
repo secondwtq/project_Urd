@@ -4,6 +4,7 @@ object = require 'object'
 Util = require 'ubtutil'
 LCT = require 'lunacolort'
 directions = require 'directions'
+Env = require 'Environment'
 
 Entity = object.object:new({
 
@@ -80,6 +81,22 @@ Entity = object.object:new({
 		else return false end
 	end,
 
+	is_on_side_of = function (self, other)
+		local pos_self = self:getpos()
+		local pos_other = other:getpos()
+
+		local pos_offset = Util.add_2dpos(Util.mul_2dpos(pos_self, -1), pos_other)
+		local dir_offset = directions.get_primary_direction(table.unpack(pos_offset))
+
+		local dir_other = directions.from_vec_to_dir(other:get_move_direction_vector_single())
+
+		local rel = directions.abs_to_rel(dir_offset, dir_other)
+
+		if rel == directions.DirectionRelative.Left or rel == directions.DirectionRelative.Right then
+			return true
+		else return false end
+	end,
+
 	move = function (self, dir) self.mov_id = dir end,
 
 	getpos = function (self) return self.pos end,
@@ -122,6 +139,23 @@ session.SessionObject = object.object:new({
 	polices = { },
 
 	thives = { },
+
+	is_cell_passable = function(self, obj, cell)
+		local ret = self.map_obj:getcell(table.unpack(cell)):passable()
+		if ret == false then return false end
+
+		local obses = nil
+		if Util.we_are_police() then obses = self.polices
+		else obses = self.thives end
+
+		for i, v in ipairs(obses) do
+			if obj ~= v then
+				if Util.equ_2dpos(cell, v:getpos()) then return false end
+			end
+		end
+
+		return true
+	end,
 	
 	before_update = function (self)
 		Util.findin(self.polices, function (o) o.mov_id = 'T' end)

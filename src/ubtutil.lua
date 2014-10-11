@@ -1,6 +1,7 @@
 ubtutil = { }
 
 LCT = require 'lunacolort'
+Env = require 'Environment'
 
 ubtutil.findin = function (t, func)
 	for k, v in pairs(t) do
@@ -29,6 +30,14 @@ ubtutil.mul_2dpos = function (pos0, pos1)
 		return { pos0[1]*pos1, pos0[2]*pos1 }
 	end
 end
+
+ubtutil.equ_2dpos = function (pos0, pos1)
+	if pos0[1] == pos1[1] and pos0[2] == pos1[2] then return true end
+	return false
+end
+
+function ubtutil.we_are_police()
+	return Env.INST_INIT == 'POL' end
 
 ubtutil.map_debug_data = function(map)
 		local r = LCT.c.RED .. 'Map Debug Data\n' .. LCT.c.RESET

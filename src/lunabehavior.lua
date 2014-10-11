@@ -200,13 +200,18 @@ btnode_priority_selector = btnode_coroutine_ctrl:new({
 				if status == bt.state.RUNNING then
 					coroutine.yield(status)
 				elseif status == bt.state.SUCCESS then
+					print("btnode_priority_selector node success ", self, node_current)
 					self:foo_end(args)
 					do return bt.state.SUCCESS end
 				elseif status == bt.state.FAILURE then
-					node_i, node_current, beg_status = self:_get_first_available_node(args, node_i+1)
+					local node_temp = nil
+					node_i, node_temp, beg_status = self:_get_first_available_node(args, 1)
+					node_current:foo_end()
+					node_current = node_temp
 					
 					if node_current == nil then
 						self:foo_end(args)
+						print("btnode_priority_selector node failure ", self)
 						return bt.state.FAILURE
 					else coroutine.yield(beg_status)
 					end
@@ -371,12 +376,13 @@ btnode_dec_cond = btnode:new({
 	end
 })
 
-btnode_createdec_cond = function (dnode, cond, failret)
+btnode_createdec_cond = function (dnode, cond, failret, name)
 	if failret == nil then failret = btnode_dec_cond._fail_ret end
+	if name == nil then name = '' end
 
 	local node = btnode_dec_cond:new()
 
-	node._node, node._cond_node, node._fail_ret = dnode, cond, failret
+	node._node, node._cond_node, node._fail_ret, node.type_node = dnode, cond, failret, node.type_node .. ' ' .. name
 
 	return node
 end
