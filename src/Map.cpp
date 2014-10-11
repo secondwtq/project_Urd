@@ -9,8 +9,9 @@ void MapClass::initmap(unsigned int width, unsigned int height) {
 			Cells.push_back(new CellClass(x, y));
 }
 
-CellClass *MapClass::getcell(unsigned int x, unsigned int y) {
+CellClass *MapClass::getcell(int x, int y) {
 	// printf("getting cell %d %d\n", x, y);
+	if (x < 0 || y < 0) return nullptr;
 	if (x > this->width-1 || y > this->height-1) return nullptr;
 	return this->Cells[(y*width)+x];
 }

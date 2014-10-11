@@ -86,8 +86,8 @@ function inst_parser_ini(inst)
 
 	-- print debug data
 	print(session_current:debug_data())
-		-- changed in CPath
-	print(Util.map_debug_data(session_current.map_obj))
+	-- changed in CPath
+	-- print(Util.map_debug_data(session_current.map_obj))
 end
 
 -- parse instruction 'INF'

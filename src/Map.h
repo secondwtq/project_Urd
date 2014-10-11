@@ -73,7 +73,7 @@ class MapClass {
 
 		// bool setcellexplored(unsigned int x, unsigned int y, bool p = true);
 
-		CellClass *getcell(unsigned int x, unsigned int y);
+		CellClass *getcell(int x, int y);
 
 		// CellClass *getneighborcell(CellClass *cell, unsigned int dir);
 

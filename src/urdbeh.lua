@@ -1,5 +1,7 @@
 dofile('lunalogger.lua')
 
+Util = require 'ubtutil'
+
 function we_are_police()
 	return Env.INST_INIT == 'POL' end
 
@@ -53,6 +55,29 @@ function find_search_pos(obj)
 
 end
 
+function get_furthest_cell(current, direction)
+	print ("STARTING GET_FUTHEST_CELL")
+
+	if direction[1] == 0 and direction[2] == 0 then return current end
+
+	local cur = current
+	local prev_cur = nil
+	print ("ENTERING LOOP")
+	while true do
+		prev_cur = cur
+		print ('LOOPING')
+		cur = Util.add_2dpos(cur, direction)
+		print ('ADDED')
+		print ("trying cell ", cur[1], cur[2])
+
+		local cell = session_current.map_obj:getcell(unpack(cur))
+		if (not cell) or (not cell:ispassable()) then
+			return prev_cur
+		end
+	end
+
+end
+
 function urdpol_init()
 if we_are_police() then
 	for i, char in ipairs(session_current.polices) do
@@ -92,14 +117,39 @@ if we_are_police() then
 			return bt.state.SUCCESS
 		end)
 
+		local node_catch_further = btnode_create_coroutine(function (self, args)
+			local obj = args.obj
+
+			print("entering catch further mode...")
+
+			while true do
+				local target = get_theif_pos(0)
+				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
+				local furthest = get_furthest_cell(target, session_current.thives[1]:get_move_direction_vector_single())
+				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(furthest)), cache)
+				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+				coroutine.yield(bt.state.RUNNING)
+			end
+
+			return bt.state.SUCCESS
+		end)
+
 		print("initing brain...")
 
-	char.brain =
+	char.brain = btnode_create_repeat(1024,
 		btnode_create_sequential()
 			:add_child(
 				btnode_createdec_cond(node_search, btnode_create_condition(thief_found, false)))
 			:add_child(
-				node_catch)
+				btnode_create_sequential()
+					:add_child(
+						btnode_createdec_cond(node_catch_further, btnode_create_condition(function () return char:is_in_front_of(session_current.thives[1]) end, false))
+					)
+					:add_child(
+						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_in_front_of(session_current.thives[1]) end, true))
+					)
+			)
+		)
 
 		logger = lloger:new()
 		logger:init()
@@ -113,7 +163,7 @@ end
 
 function urdpol_tick()
 if we_are_police() then
-	for i,char in ipairs(session_current.polices) do
+	for i, char in ipairs(session_current.polices) do
 
 		if char.brain_activated then
 			print("exectuing brain...")
@@ -122,6 +172,8 @@ if we_are_police() then
 				char.brain_activated = false
 			end
 		end
+
+		print("Is in front of thief: ", char:is_in_front_of(session_current.thives[1]))
 
 	end
 

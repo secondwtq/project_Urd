@@ -3,6 +3,7 @@ session = { }
 object = require 'object'
 Util = require 'ubtutil'
 LCT = require 'lunacolort'
+directions = require 'directions'
 
 Entity = object.object:new({
 
@@ -16,7 +17,9 @@ Entity = object.object:new({
 
 	previous_position_single = nil,
 
-	get_move_direction_vector_single = function (self)
+	previous_move_vector = nil,
+
+	_get_move_direction_vector_single = function (self)
 		if self.previous_position_single == nil then
 			self.previous_position_single = { self.pos[1], self.pos[2] }
 		end
@@ -24,7 +27,9 @@ Entity = object.object:new({
 		local move_offset_x = self.pos[1] - self.previous_position_single[1]
 		local move_offset_y = self.pos[2] - self.previous_position_single[2]
 
-		if move_offset_x == 0 and move_offset_y == 0 then return { 0, 0 } end
+		if move_offset_x == 0 and move_offset_y == 0 then
+			return { 0, 0 }
+		end
 
 		if move_offset_x >= 0 and move_offset_y >= 0 then
 			if move_offset_x > move_offset_y then return { 1, 0 }
@@ -42,6 +47,37 @@ Entity = object.object:new({
 			if (-move_offset_x) > (-move_offset_y) then return { -1, 0 }
 			else return { 0, -1 } end
 		end
+	end,
+
+	get_move_direction_vector_single = function (self)
+		local ret = self:_get_move_direction_vector_single()
+
+		if directions.from_vec_to_dir(ret) == directions.Directions.Still then
+			if self.previous_move_vector == nil then
+				self.previous_move_vector = ret
+				return ret
+			else
+				return self.previous_move_vector
+			end
+		else
+			self.previous_move_vector = ret
+			return ret
+		end
+	end,
+
+	is_in_front_of = function (self, other)
+		local pos_self = self:getpos()
+		local pos_other = other:getpos()
+
+		local pos_offset = Util.add_2dpos(Util.mul_2dpos(pos_self, -1), pos_other)
+		local dir_offset = directions.get_primary_direction(table.unpack(pos_offset))
+
+		local dir_self = directions.from_vec_to_dir(self:get_move_direction_vector_single())
+		local dir_other = directions.from_vec_to_dir(other:get_move_direction_vector_single())
+
+		if directions.abs_to_rel(dir_offset, dir_other) == directions.DirectionRelative.Opposite then
+			return true
+		else return false end
 	end,
 
 	move = function (self, dir) self.mov_id = dir end,
