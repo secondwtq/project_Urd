@@ -176,7 +176,7 @@ if we_are_police() then
 			:add_child(
 				btnode_createdec_cond(node_search, btnode_create_condition(thief_found, false)))
 			:add_child(
-				btnode_create_priority()
+				btnode_create_priority_cond()
 					:add_child(
 						btnode_createdec_cond(node_catch, btnode_create_condition(function () return Util.distance(char.pos, session_current.thives[1].pos) <= 2 end), bt.state.FAILURE, "CATCH_NEAR")
 					)
@@ -184,7 +184,7 @@ if we_are_police() then
 						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_on_side_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHSIDE")
 					)
 					:add_child(
-						btnode_createdec_cond(node_catch_further, btnode_create_condition(function () return (char:is_in_front_of(session_current.thives[1]) == false) and not char:is_on_side_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHFUR")
+						btnode_createdec_cond(node_catch_further, btnode_create_condition(function () return (char:is_in_front_of(session_current.thives[1]) == false) end), bt.state.FAILURE, "CATCHFUR")
 					)
 					:add_child(
 						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_in_front_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHFRONT")

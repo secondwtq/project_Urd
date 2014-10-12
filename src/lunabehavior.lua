@@ -224,6 +224,80 @@ btnode_priority_selector = btnode_coroutine_ctrl:new({
 
 btnode_create_priority = function () return btnode_priority_selector:new() end
 
+btnode_priority_selector_cond = btnode_coroutine_ctrl:new({
+
+		type_node = '[CONTROL_PRIORITY_COND]',
+
+		_get_first_available_node = function (self, args, start)
+			local node_current = nil
+			local node_i = nil
+			local ret_status = nil
+
+			for i, node in ipairs(self.children) do
+				if (i >= start) then
+					local status = node:execute(args)
+					if status ~= bt.state.FAILURE then
+						node_current = node
+						node_i = i
+						ret_status = status
+						break
+					end
+				end
+			end
+			
+			return node_i, node_current, ret_status
+		end,
+
+		co_execute = function (self, args)
+
+			if #(self.children) == 0 then return bt.state.SUCCESS end
+			local node_i = 0
+			local node_current
+			local beg_status
+			node_i, node_current, beg_status = self:_get_first_available_node(args, 1)
+
+			if node_current == nil then
+				self:foo_end(args)
+				return bt.state.FAILURE
+			else coroutine.yield(beg_status)
+			end
+
+			while true do
+				local node_temp = nil
+				node_i, node_temp, beg_status = self:_get_first_available_node(args, 1)
+				if node_temp ~= node_current then
+					node_current:foo_end()
+					node_current = node_temp
+				end
+
+				print("btnode_priority_selector running ", node_current.type_node, beg_status)
+
+				if beg_status == bt.state.RUNNING then
+					coroutine.yield(beg_status)
+				elseif beg_status == bt.state.SUCCESS then
+					print("btnode_priority_selector node success ", self, node_current)
+					self:foo_end(args)
+					do return bt.state.SUCCESS end
+				elseif beg_status == bt.state.FAILURE then
+					local node_temp = nil
+					node_i, node_temp, beg_status = self:_get_first_available_node(args, 1)
+					node_current:foo_end()
+					node_current = node_temp
+					
+					if node_current == nil then
+						self:foo_end(args)
+						print("btnode_priority_selector node failure ", self)
+						return bt.state.FAILURE
+					else coroutine.yield(beg_status)
+					end
+				end
+			end
+
+		end,
+	})
+
+btnode_create_priority_cond = function () return btnode_priority_selector_cond:new() end
+
 btnode_sequential = btnode_coroutine_ctrl:new({
 
 	type_node = '[CONTROL_SEQUENTIAL]',
