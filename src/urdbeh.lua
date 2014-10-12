@@ -169,6 +169,24 @@ if we_are_police() then
 			return bt.state.SUCCESS
 		end)
 
+		local node_cache_behind = btnode_create_coroutine(function (self, args)
+			local obj = args.obj
+
+			print("entering catch behind mode...")
+
+			while true do
+				print("\tnode_cache_behind catching behind...")
+				local target = get_theif_pos(0)
+				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
+				local behind = get_furthest_cell(target, Util.mul_2dpos(session_current.thives[1]:get_move_direction_vector_single(), -1), 3)
+				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(behind)), cache)
+				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+				coroutine.yield(bt.state.RUNNING)
+			end
+
+			print ("catch behind success")
+		end)
+
 		print("initing brain...")
 
 	char.brain = btnode_create_repeat(1024,
@@ -178,7 +196,10 @@ if we_are_police() then
 			:add_child(
 				btnode_create_priority_cond()
 					:add_child(
-						btnode_createdec_cond(node_catch, btnode_create_condition(function () return Util.distance(char.pos, session_current.thives[1].pos) <= 2 end), bt.state.FAILURE, "CATCH_NEAR")
+						btnode_createdec_cond(node_cache_behind, btnode_create_condition(function () return char:is_behind(session_current.thives[1]) and char:is_on_side_of(session_current.thives[1]) end), bt.state.FAILURE, "CATCH_BEHIND")
+					)
+					:add_child(
+						btnode_createdec_cond(node_catch, btnode_create_condition(function () return Util.distance(char.pos, session_current.thives[1].pos) <= 1 end), bt.state.FAILURE, "CATCH_NEAR")
 					)
 					:add_child(
 						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_on_side_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHSIDE")

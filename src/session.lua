@@ -81,6 +81,28 @@ Entity = object.object:new({
 		else return false end
 	end,
 
+	is_behind = function (self, other)
+		local pos_self = self:getpos()
+		local pos_other = other:getpos()
+
+		local dir_other = directions.from_vec_to_dir(other:get_move_direction_vector_single())
+
+		if dir_other == directions.Directions.Left then
+			if pos_self[1] > pos_other[1] then return true end
+		end
+		if dir_other == directions.Directions.Right then
+			if pos_self[1] < pos_other[1] then return true end
+		end
+		if dir_other == directions.Directions.Up then
+			if pos_self[2] > pos_other[2] then return true end
+		end
+		if dir_other == directions.Directions.Down then
+			if pos_self[2] < pos_other[2] then return true end
+		end
+
+		return false
+	end,
+
 	is_on_side_of = function (self, other)
 		local pos_self = self:getpos()
 		local pos_other = other:getpos()
