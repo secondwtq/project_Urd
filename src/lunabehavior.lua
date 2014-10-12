@@ -196,6 +196,7 @@ btnode_priority_selector = btnode_coroutine_ctrl:new({
 
 			while true do
 				local status = node_current:execute(args)
+				print("btnode_priority_selector running ", node_current.type_node, status)
 
 				if status == bt.state.RUNNING then
 					coroutine.yield(status)

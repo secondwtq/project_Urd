@@ -55,21 +55,36 @@ function find_search_pos(obj)
 
 end
 
-function get_furthest_cell(current, direction)
-	print ("STARTING GET_FUTHEST_CELL")
+function get_furthest_cell(current, direction, max_step)
+	if max_step == nil then max_step = 1024 end
 
 	if direction[1] == 0 and direction[2] == 0 then return current end
 
 	local cur = current
 	local prev_cur = nil
+
+	local i = 0
 	while true do
+		if i >= max_step then return cur end
+		i = i+1
+
 		prev_cur = cur
 		cur = Util.add_2dpos(cur, direction)
 
 		local cell = session_current.map_obj:getcell(unpack(cur))
 		if (not cell) or (not cell:ispassable()) then
+			print ("\t\tget_furthest_cell returning normal")
 			return prev_cur
 		end
+
+		if (Util.equ_2dpos(direction, {1, 0}) and cur[1] >= current[1]) or 
+			(Util.equ_2dpos(direction, {-1, 0}) and cur[1] <= current[1]) or
+			(Util.equ_2dpos(direction, {0, 1}) and cur[2] >= current[2]) or
+			(Util.equ_2dpos(direction, {0, -1}) and cur[2] <= current[2]) then
+			print ("\t\tget_furthest_cell returning self boundary")
+			return cur
+		end
+
 	end
 
 end
@@ -121,15 +136,17 @@ if we_are_police() then
 			print("entering catch mode...")
 
 			while true do
+				print("\tnode_catch catching...")
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				set_all_unpassable(session_current.polices, obj)
+				-- set_all_unpassable(session_current.polices, obj)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target)), cache)
-				reset_unpassable(session_current.polices)
+				-- reset_unpassable(session_current.polices)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
 			end
 
+			print("catch success")
 			return bt.state.SUCCESS
 		end)
 
@@ -139,6 +156,7 @@ if we_are_police() then
 			print("entering catch further mode...")
 
 			while true do
+				print("\tnode_catch_further catching further...")
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
 				local furthest = get_furthest_cell(target, session_current.thives[1]:get_move_direction_vector_single())
@@ -147,6 +165,7 @@ if we_are_police() then
 				coroutine.yield(bt.state.RUNNING)
 			end
 
+			print ("catch further success")
 			return bt.state.SUCCESS
 		end)
 
@@ -159,10 +178,13 @@ if we_are_police() then
 			:add_child(
 				btnode_create_priority()
 					:add_child(
+						btnode_createdec_cond(node_catch, btnode_create_condition(function () return Util.distance(char.pos, session_current.thives[1].pos) <= 2 end), bt.state.FAILURE, "CATCH_NEAR")
+					)
+					:add_child(
 						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_on_side_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHSIDE")
 					)
 					:add_child(
-						btnode_createdec_cond(node_catch_further, btnode_create_condition(function () return (char:is_in_front_of(session_current.thives[1])) and not char:is_on_side_of(session_current.thives[1]) end, false), bt.state.FAILURE, "CATCHFUR")
+						btnode_createdec_cond(node_catch_further, btnode_create_condition(function () return (char:is_in_front_of(session_current.thives[1]) == false) and not char:is_on_side_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHFUR")
 					)
 					:add_child(
 						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_in_front_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHFRONT")
