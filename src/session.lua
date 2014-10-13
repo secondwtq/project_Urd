@@ -16,6 +16,8 @@ Entity = object.object:new({
 
 	found = false,
 
+	onsight = false,
+
 	previous_position_single = nil,
 
 	previous_move_vector = nil,
