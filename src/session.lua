@@ -70,6 +70,30 @@ Entity = object.object:new({
 		end
 	end,
 
+	get_move_direction_vec_smoothed = function (self, max_step)
+		if max_step == nil then max_step = 3 end
+
+		local vecs = { }
+		local last_vec = self:get_move_direction_vector_single()
+
+		for i = #(self.move_vectors), #(self.move_vectors)-max_step+1, -1 do
+			if i > 0 then table.insert(vecs, self.move_vectors[i])
+			else table.insert(vecs, last_vec) end
+		end
+
+		-- for i, v in ipairs(vecs) do
+		-- 	io.write("<"..tostring(v[1])..", "..tostring(v[2])..">, ")
+		-- end
+		-- print('')
+
+		local ret = { 0, 0 }
+		for i, v in ipairs(vecs) do
+			ret = Util.add_2dpos(ret, v)
+		end
+
+		return Util.nom_2dpos(Util.mul_2dpos(ret, 1.0/max_step))
+	end,
+
 	is_in_front_of = function (self, other)
 		local pos_self = self:getpos()
 		local pos_other = other:getpos()

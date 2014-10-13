@@ -57,6 +57,27 @@ ubtutil.equ_2dpos = function (pos0, pos1)
 	return false
 end
 
+ubtutil.get_nearest_dir = function (vec)
+	local dirs = { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } }
+
+	local dots = { }
+
+	for i, v in ipairs(dirs) do
+		dots[i] = ubtutil.dot_2dpos(vec, v)
+	end
+
+	local idx = 1
+	local max = 0
+	for i, v in ipairs(dots) do
+		if v > max then
+			idx = i
+			max = v
+		end
+	end
+
+	return dirs[idx]
+end
+
 function ubtutil.we_are_police()
 	return Env.INST_INIT == 'POL' end
 

@@ -196,7 +196,7 @@ btnode_priority_selector = btnode_coroutine_ctrl:new({
 
 			while true do
 				local status = node_current:execute(args)
-				print("btnode_priority_selector running ", node_current.type_node, status)
+				-- print("btnode_priority_selector running ", node_current.type_node, status)
 
 				if status == bt.state.RUNNING then
 					coroutine.yield(status)
@@ -270,12 +270,12 @@ btnode_priority_selector_cond = btnode_coroutine_ctrl:new({
 					node_current = node_temp
 				end
 
-				print("btnode_priority_selector running ", node_current.type_node, beg_status)
+				-- print("btnode_priority_selector running ", node_current.type_node, beg_status)
 
 				if beg_status == bt.state.RUNNING then
 					coroutine.yield(beg_status)
 				elseif beg_status == bt.state.SUCCESS then
-					print("btnode_priority_selector node success ", self, node_current)
+					-- print("btnode_priority_selector node success ", self, node_current)
 					self:foo_end(args)
 					do return bt.state.SUCCESS end
 				elseif beg_status == bt.state.FAILURE then
@@ -310,7 +310,7 @@ btnode_sequential = btnode_coroutine_ctrl:new({
 				-- print(status)
 
 				if status == bt.state.SUCCESS then
-					print("btnode_sequential node success ", node.type_node, node)
+					-- print("btnode_sequential node success ", node.type_node, node)
 					node:foo_end(args)
 					break
 				elseif status == bt.state.FAILURE then
@@ -445,6 +445,7 @@ btnode_dec_cond = btnode:new({
 
 	execute = function (self, args)
 		local cond = self._cond_node:execute(args)
+		print("btnode_dec_cond:execute ", self.type_node, " cond ", cond)
 		if cond == bt.state.SUCCESS then
 			do return self._node:execute(args) end
 		else return self._fail_ret end
