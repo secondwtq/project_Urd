@@ -107,8 +107,11 @@ function inst_parser_inf(inst)
 	for id, x, y in string.gmatch(pos_pols, '(%d+),(%d+),(%d+);') do
 		id, x, y = math.floor(tonumber(id)), math.floor(tonumber(x)), math.floor(tonumber(y))
 		local police = Util.findin(session_current.polices, function (o) return o.id == id end)
+		police.previous_position_single = { police.pos[1], police.pos[2] }
 		police:setpos(x, y)
 		police.found = true
+		police.onsight = true
+		table.insert(police.move_vectors, police:get_move_direction_vector_single())
 	end
 
 	-- update thief location
@@ -119,6 +122,7 @@ function inst_parser_inf(inst)
 		thief:setpos(x, y)
 		thief.found = true
 		thief.onsight = true
+		table.insert(thief.move_vectors, thief:get_move_direction_vector_single())
 	end
 
 	-- update terrain status

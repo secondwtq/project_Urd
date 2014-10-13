@@ -22,6 +22,8 @@ Entity = object.object:new({
 
 	previous_move_vector = nil,
 
+	move_vectors = { },
+
 	_get_move_direction_vector_single = function (self)
 		if self.previous_position_single == nil then
 			self.previous_position_single = { self.pos[1], self.pos[2] }
@@ -195,11 +197,13 @@ session.SessionObject = object.object:new({
 		for i = 1, num_pol do
 			local t = PoliceObject:new()
 			t.id = i-1
+			t.move_vectors = { }
 			table.insert(self.polices, t)
 		end
 		for i = 1, num_thi do 
 			local t = ThiefObject:new()
 			t.id = i-1
+			t.move_vectors = { }
 			table.insert(self.thives, t)
 		end
 	end,

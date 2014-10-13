@@ -11,9 +11,26 @@ function thief_found()
 	print ("checking theif_found .. ", session_current.thives[1].found)
 	return session_current.thives[1].found end
 
+function thief_onsight(id)
+	print("checking thief_onsight .. ", session_current.thives[id].onsight)
+	return session_current.thives[id].onsight
+end
+
 function get_theif_pos(id)
 	if id == nil then id = 0 end
 	return session_current.thives[id+1].pos
+end
+
+function count_of_state_pol(state)
+	io.write("counting state in polices\t", state)
+	local ret = 0;
+	for i, v in ipairs(session_current.polices) do
+		if v._catch_state == state then
+			ret = ret + 1
+		end
+	end
+	print('\t', ret)
+	return ret
 end
 
 function find_search_pos(obj)
@@ -101,6 +118,15 @@ function is_actually_front(pos0, pos1, direction)
 	return relative < -0.86
 end
 
+function is_actually_behind(pos0, pos1, direction)
+	return is_actually_front(pos0, pos1, Util.mul_2dpos(direction, -1))
+end
+
+function is_actually_side(pos0, pos1, direction)
+	if is_actually_front(pos0, pos1, direction) == false and is_actually_behind(pos0, pos1, direction) == false then return true
+	else return false end
+end
+
 function set_all_unpassable(set, except)
 	for i, v in ipairs(set) do
 		if v ~= except then
@@ -120,6 +146,8 @@ end
 function urdpol_init()
 if we_are_police() then
 	for i, char in ipairs(session_current.polices) do
+
+		char._catch_state = 'NONE'
 
 		local node_search = btnode_create_coroutine(function (self, args)
 			local obj = args.obj
@@ -209,7 +237,7 @@ if we_are_police() then
 				print("\tnode_cache_behind catching behind...")
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				local behind = get_furthest_cell(target, Util.mul_2dpos(session_current.thives[1]:get_move_direction_vector_single(), -1), 3)
+				local behind = get_furthest_cell(target, Util.mul_2dpos(session_current.thives[1]:get_move_direction_vector_single(), -1), 4)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(behind)), cache)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
@@ -224,26 +252,66 @@ if we_are_police() then
 	char.brain = btnode_create_repeat(1024,
 		btnode_create_sequential()
 			:add_child(
-				btnode_createdec_cond(node_search, btnode_create_condition(thief_found, false)))
+				btnode_createdec_cond(
+					btnode_create_sequential()
+						:add_child(btnode_create_coroutine(function () char._catch_state = 'INITIAL' return bt.state.SUCCESS end))
+						:add_child(node_search),
+					btnode_create_condition(thief_found, false)))
+			:add_child(
+				btnode_createdec_cond(
+					btnode_create_sequential()
+						:add_child(btnode_create_coroutine(function () char._catch_state = 'SEARCH' return bt.state.SUCCESS end))
+						:add_child(node_search),
+					btnode_create_condition(function ()
+						return thief_onsight(1) end, false)))
 			:add_child(
 				btnode_create_priority_cond()
 					:add_child(
-						btnode_createdec_cond(node_catch, btnode_create_condition(function () return is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vector_single()) end), bt.state.FAILURE, "CATCH_ACTUALLY_FRONT")
-					)
+						btnode_createdec_cond(node_catch, 
+							btnode_create_condition(function ()
+								return is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vector_single()) end),
+							bt.state.FAILURE, "CATCH_ACTUALLY_FRONT"))
 					:add_child(
-						btnode_createdec_cond(node_cache_behind, btnode_create_condition(function () return char:is_behind(session_current.thives[1]) and char:is_on_side_of(session_current.thives[1]) end), bt.state.FAILURE, "CATCH_BEHIND")
-					)
+						btnode_createdec_cond(
+							btnode_create_sequential()
+								:add_child(btnode_create_coroutine(function () char._catch_state = 'NEAR' return bt.state.SUCCESS end))
+								:add_child(node_catch_lead),
+							btnode_create_condition(function ()
+								return Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol('NEAR') < 1 end),
+						bt.state.FAILURE, "CATCH_NEAR"))
 					:add_child(
-						btnode_createdec_cond(node_catch_lead, btnode_create_condition(function () return Util.distance(char.pos, session_current.thives[1].pos) <= 3 end), bt.state.FAILURE, "CATCH_NEAR")
-					)
+						btnode_createdec_cond(
+							btnode_create_sequential()
+								:add_child(btnode_create_coroutine(function () char._catch_state = 'BEHIND' return bt.state.SUCCESS end))
+								:add_child(node_cache_behind),
+							btnode_create_condition(function ()
+								return char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vector_single()) and count_of_state_pol('BEHIND') < 2 end),
+							bt.state.FAILURE, "CATCH_BEHIND"))
 					:add_child(
-						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_on_side_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHSIDE")
-					)
+						btnode_createdec_cond(
+							btnode_create_sequential()
+								:add_child(btnode_create_coroutine(function () char._catch_state = 'FUR' return bt.state.SUCCESS end))
+								:add_child(node_catch_further),
+							btnode_create_condition(function ()
+								return (is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vector_single()) and count_of_state_pol('FUR') < 2) end),
+						bt.state.FAILURE, "CATCHFUR"))
 					:add_child(
-						btnode_createdec_cond(node_catch_further, btnode_create_condition(function () return (char:is_in_front_of(session_current.thives[1]) == false) end), bt.state.FAILURE, "CATCHFUR")
-					)
+						btnode_createdec_cond(
+							btnode_create_sequential()
+								:add_child(btnode_create_coroutine(function () char._catch_state = 'SIDE' return bt.state.SUCCESS end))
+								:add_child(node_catch_lead),
+							btnode_create_condition(function ()
+								return char:is_on_side_of(session_current.thives[1]) and count_of_state_pol('SIDE') < 1 end, true),
+						bt.state.FAILURE, "CATCHSIDE"))
 					:add_child(
-						btnode_createdec_cond(node_catch, btnode_create_condition(function () return char:is_in_front_of(session_current.thives[1]) end, true), bt.state.FAILURE, "CATCHFRONT")
+						btnode_createdec_cond(node_catch,
+							btnode_create_condition(function ()
+								return char:is_in_front_of(session_current.thives[1]) end),
+						bt.state.FAILURE, "CATCHFRONT"))
+					:add_child(
+						btnode_create_sequential()
+							:add_child(btnode_create_coroutine(function () char._catch_state = 'LAST' return bt.state.SUCCESS end))
+							:add_child(node_catch_further)
 					)
 			)
 		)
@@ -270,9 +338,14 @@ if we_are_police() then
 			end
 		end
 
+		print('')
+		print("Catch mode: ", char._catch_state)
+		print("Is behind of thief: ", char:is_behind(session_current.thives[1]))
 		print("Is on side of thief: ", char:is_on_side_of(session_current.thives[1]))
+		print("Is on the exact side of thief: ", is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vector_single()))
 		print("Is in front of thief: ", char:is_in_front_of(session_current.thives[1]))
 		print("Is on the exact front of thief: ", is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vector_single()))
+		print('')
 
 	end
 
