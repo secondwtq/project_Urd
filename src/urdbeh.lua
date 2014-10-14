@@ -426,9 +426,4 @@ if we_are_police() then
 	local t_smoothed = session_current.thives[1]:get_move_direction_vec_smoothed()
 	print("Thief 0 move vector (smoothed): ", t_smoothed[1], t_smoothed[2])
 end
-
--- for i = 0, math.pow(2, 23) do
--- 	local c = math.sqrt(1034576)
--- end
-
 end

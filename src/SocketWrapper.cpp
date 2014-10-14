@@ -37,7 +37,7 @@ void SocketWrapper::send(const string& content) {
 void SocketWrapper::send_to(const std::string& content, const std::string& address, unsigned int port) {
 	_endp_rec_tosend = *_resolver.resolve({ip::udp::v4(), address, std::to_string(port)});
 	_SocketOperationCallback _foo_callback = [this, content, address, port] (const boost::system::error_code& error, std::size_t len) {
-		cout << "BAPol (" << int(LuaUtils::GetTime()) << "): data sended to " << address << ":" << port << " : " << content << endl;
+		cout << "BAPol (" << (unsigned long long)(LuaUtils::GetTime()) << "): data sended to " << address << ":" << port << " : " << content << endl;
 		this->_handle_send(error, len);
 	};
 	_udp_sock.async_send_to(buffer(content), _endp_rec_tosend, _foo_callback);
@@ -45,7 +45,7 @@ void SocketWrapper::send_to(const std::string& content, const std::string& addre
 
 void SocketWrapper::_start_recieve() {
 	_SocketOperationCallback _foo_callback = [this] (const boost::system::error_code& error, size_t len) {
-		cout << "BAPol (" << int(LuaUtils::GetTime()) << "): data received from " << this->_endp_rec_remote.address() << ":" << this->_endp_rec_remote.port() << " : " << string(begin(_rec_buffer), begin(_rec_buffer)+len) << endl;
+		cout << "BAPol (" << (unsigned long long)(LuaUtils::GetTime()) << "): data received from " << this->_endp_rec_remote.address() << ":" << this->_endp_rec_remote.port() << " : " << string(begin(_rec_buffer), begin(_rec_buffer)+len) << endl;
 		this->_handle_recieve(error, len);
 	};
 	_udp_sock.async_receive_from(buffer(this->_rec_buffer), _endp_rec_remote, _foo_callback);

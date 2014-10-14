@@ -17,6 +17,7 @@
 #error "Unable to define getRealTime( ) for an unknown OS."
 #endif
 
+#include <stdio.h>
 #include "Utils.h"
 
 namespace LuaUtils {
@@ -42,13 +43,14 @@ namespace LuaUtils {
 		#if defined(_WIN32)
 			FILETIME tm;
 			ULONGLONG t;
-		#if defined(NTDDI_WIN8) && NTDDI_VERSION >= NTDDI_WIN8
-			/* Windows 8, Windows Server 2012 and later. ---------------- */
-			GetSystemTimePreciseAsFileTime( &tm );
-		#else
-			/* Windows 2000 and later. ---------------------------------- */
-			GetSystemTimeAsFileTime( &tm );
-		#endif
+			#if defined(NTDDI_WIN8) && NTDDI_VERSION >= NTDDI_WIN8
+				/* Windows 8, Windows Server 2012 and later. ---------------- */
+				GetSystemTimePreciseAsFileTime( &tm );
+				return tm.dwLowDateTime;
+			#else
+				/* Windows 2000 and later. ---------------------------------- */
+				GetSystemTimeAsFileTime( &tm );
+			#endif
 			t = ((ULONGLONG)tm.dwHighDateTime << 32) | (ULONGLONG)tm.dwLowDateTime;
 			return (double)t / 10000.0;
 
