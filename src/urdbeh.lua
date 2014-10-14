@@ -33,6 +33,18 @@ function count_of_state_pol(state)
 	return ret
 end
 
+function count_of_state_pol_except(obj, state)
+	io.write("counting state in polices\t", state)
+	local ret = 0;
+	for i, v in ipairs(session_current.polices) do
+		if v._catch_state == state and v ~= obj then
+			ret = ret + 1
+		end
+	end
+	print('\t', ret)
+	return ret
+end
+
 function find_search_pos(obj)
 	local search_target_org = { session_current.map_obj.width-obj.pos[1]-1, session_current.map_obj.height-obj.pos[2]-1 }
 
@@ -84,9 +96,12 @@ function get_random_cell(origin, radius)
 	else return get_random_cell(origin, radius) end
 end
 
-function get_furthest_cell(current, direction, max_step, enable_bound)
+function get_furthest_cell(current, direction, self_pos, max_step, enable_bound, allow_turn)
+	print(self_pos[1], self_pos[2])
+
 	if max_step == nil then max_step = 1024 end
 	if enable_bound == nil then enable_bound = true end
+	if allow_turn == nil then allow_turn = false end
 
 	if direction[1] == 0 and direction[2] == 0 then return current end
 
@@ -95,7 +110,13 @@ function get_furthest_cell(current, direction, max_step, enable_bound)
 
 	local i = 0
 	while true do
-		if i >= max_step then return cur end
+
+		if i >= max_step then
+			local cell = session_current.map_obj:getcell(unpack(cur)) 
+			print ("\t\tget_furthest_cell returning max step")
+			if (not cell) or (not cell:ispassable()) then return cur
+			else return prev_cur end
+		end
 		i = i+1
 
 		prev_cur = cur
@@ -103,15 +124,17 @@ function get_furthest_cell(current, direction, max_step, enable_bound)
 
 		local cell = session_current.map_obj:getcell(unpack(cur))
 		if (not cell) or (not cell:ispassable()) then
-			-- print ("\t\tget_furthest_cell returning normal")
-			return prev_cur
+			print ("\t\tget_furthest_cell returning normal")
+			if allow_turn then
+				return get_furthest_cell(cur, Util.right_angel_vec(direction), self_pos, max_step-i-1+1, enable_bound, false)
+			else return prev_cur end
 		end
 
-		if enable_bound and ((Util.equ_2dpos(direction, {1, 0}) and cur[1] >= current[1]) or 
-					(Util.equ_2dpos(direction, {-1, 0}) and cur[1] <= current[1]) or
-					(Util.equ_2dpos(direction, {0, 1}) and cur[2] >= current[2]) or
-					(Util.equ_2dpos(direction, {0, -1}) and cur[2] <= current[2])) then
-			-- print ("\t\tget_furthest_cell returning self boundary")
+		if enable_bound and ((Util.equ_2dpos(direction, {1, 0}) and cur[1] >= self_pos[1]) or 
+					(Util.equ_2dpos(direction, {-1, 0}) and cur[1] <= self_pos[1]) or
+					(Util.equ_2dpos(direction, {0, 1}) and cur[2] >= self_pos[2]) or
+					(Util.equ_2dpos(direction, {0, -1}) and cur[2] <= self_pos[2])) then
+			print ("\t\tget_furthest_cell returning self boundary")
 			return cur
 		end
 
@@ -121,13 +144,13 @@ end
 
 function get_lead_cell(current_pos, target_pos, target_direction)
 	local lookAheadTime = Util.distance_manhattan(current_pos, target_pos) / 2
-	return get_furthest_cell(target_pos, target_direction, math.ceil(lookAheadTime), false)
+	return get_furthest_cell(target_pos, target_direction, current_pos, math.ceil(lookAheadTime), false, false)
 end
 
 function is_actually_front(pos0, pos1, direction)
 	local vec_dis = Util.add_2dpos(pos1, Util.mul_2dpos(pos0, -1))
 	local relative = Util.dot_2dpos(Util.nom_2dpos(vec_dis), Util.nom_2dpos(direction))
-	print("is_actually_front ", relative < -0.86)
+	-- print("is_actually_front ", relative < -0.86)
 	return relative < -0.86
 end
 
@@ -203,25 +226,6 @@ if we_are_police() then
 			return bt.state.SUCCESS
 		end)
 
-		local node_catch_further = btnode_create_coroutine(function (self, args)
-			local obj = args.obj
-
-			print("entering catch further mode...")
-
-			while true do
-				print("\tnode_catch_further catching further...")
-				local target = get_theif_pos(0)
-				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				local furthest = get_furthest_cell(target, session_current.thives[1]:get_move_direction_vector_single())
-				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(furthest)), cache)
-				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
-				coroutine.yield(bt.state.RUNNING)
-			end
-
-			print ("catch further success")
-			return bt.state.SUCCESS
-		end)
-
 		local node_catch_further_random = btnode_create_coroutine(function (self, args)
 			local obj = args.obj
 
@@ -231,7 +235,7 @@ if we_are_police() then
 				print("\tnode_catch_further_random catching further random...")
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				local furthest = get_furthest_cell(target, session_current.thives[1]:get_move_direction_vector_single())
+				local furthest = get_furthest_cell(target, Util.get_nearest_dir(session_current.thives[1]:get_move_direction_vec_smoothed()), char.pos)
 				local target_cell = get_random_cell(furthest, 2)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
@@ -251,7 +255,7 @@ if we_are_police() then
 				print("\tnode_catch_lead catching lead...")
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				local lead_cell = get_lead_cell(char.pos, target, session_current.thives[1]:get_move_direction_vector_single())
+				local lead_cell = get_lead_cell(char.pos, target, Util.get_nearest_dir(session_current.thives[1]:get_move_direction_vec_smoothed()))
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(lead_cell)), cache)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
@@ -261,25 +265,56 @@ if we_are_police() then
 			return bt.state.SUCCESS
 		end)
 
-		local node_cache_behind = btnode_create_coroutine(function (self, args)
-			local obj = args.obj
+		local node_creator = function (cell_callback, name)
+			return btnode_create_coroutine(function (self, args)
+				local obj = args.obj
 
-			print("entering catch behind mode...")
+				print("entering catch " .. name .. " mode...")
 
-			while true do
-				print("\tnode_cache_behind catching behind...")
-				local target = get_theif_pos(0)
-				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				local behind = get_furthest_cell(target, Util.mul_2dpos(session_current.thives[1]:get_move_direction_vector_single(), -1), 4)
-				print("catch behind ", behind[1], behind[2])
-				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(behind)), cache)
-				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
-				coroutine.yield(bt.state.RUNNING)
-			end
+				while true do
+					print("\tnode_catch " .. name .. " catching...")
+					local target = get_theif_pos(0)
+					local cache = Utility.Urd.Pathfinding.Pathfindingcache()
+					local target_cell = cell_callback(target, session_current.thives[1])
+					Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
+					if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+					coroutine.yield(bt.state.RUNNING)
+				end
 
-			print ("catch behind success")
-		end)
+				print("catch " .. name .. " success")
+			end)
+		end
 
+		local node_cache_behind = node_creator(function (targetpos, targetobj)
+			local lead_cell = get_lead_cell(char.pos, targetpos, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()))
+			print("catch behind lead ", lead_cell[1], lead_cell[2])
+			local behind = get_furthest_cell(lead_cell, Util.mul_2dpos(Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()), -1), char.pos, 3)
+			print("catch behind ", behind[1], behind[2])
+			return behind
+		end, "BEHIND")
+
+		local node_catch_further = node_creator(function (targetpos, targetobj)
+			local lead_cell = get_lead_cell(char.pos, targetpos, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()))
+			print("catch further lead ", lead_cell[1], lead_cell[2])
+			local further = get_furthest_cell(lead_cell, targetobj:get_move_direction_vec_smoothed(), char.pos, 2)
+			print("catch further ", further[1], further[2])
+			return further
+		end, "FURTHER")
+
+		local node_catch_last = node_creator(function (targetpos, targetobj)
+			local lead_cell = get_lead_cell(char.pos, targetpos, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()))
+			local furthest = get_furthest_cell(lead_cell, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()), char.pos, 2, false, false)
+			print("catch last ", furthest[1], furthest[2])
+			return furthest
+		end, "lAST")
+
+		local node_catch_last_random = node_creator(function (targetpos, targetobj)
+			local lead_cell = get_lead_cell(char.pos, targetpos, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()))
+			local furthest = get_furthest_cell(lead_cell, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()), char.pos, 2, false, false)
+			local ret = get_random_cell(furthest, 2)
+			print("catch last random ", ret[1], ret[2])
+			return ret
+		end, "lAST_RANDOM")
 
 		print("initing brain...")
 
@@ -314,7 +349,7 @@ if we_are_police() then
 								:add_child(btnode_create_coroutine(function () char._catch_state = 'NEAR' return bt.state.SUCCESS end))
 								:add_child(node_catch),
 							btnode_create_condition(function ()
-								return Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol('NEAR') < 1 end),
+								return Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol_except(char, 'NEAR') < 1 end),
 						bt.state.FAILURE, "CATCH_NEAR"))
 
 					:add_child(
@@ -323,7 +358,7 @@ if we_are_police() then
 								:add_child(btnode_create_coroutine(function () char._catch_state = 'BEHIND' return bt.state.SUCCESS end))
 								:add_child(node_cache_behind),
 							btnode_create_condition(function ()
-								return char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol('BEHIND') < 2 end),
+								return char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'BEHIND') < 2 end),
 							bt.state.FAILURE, "CATCH_BEHIND"))
 					:add_child(
 						btnode_createdec_cond(
@@ -331,7 +366,7 @@ if we_are_police() then
 								:add_child(btnode_create_coroutine(function () char._catch_state = 'FUR' return bt.state.SUCCESS end))
 								:add_child(node_catch_further),
 							btnode_create_condition(function ()
-								return (is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol('FUR') < 1) end),
+								return (is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'FUR') < 2) end),
 						bt.state.FAILURE, "CATCHFUR"))
 					:add_child(
 						btnode_createdec_cond(
@@ -339,12 +374,12 @@ if we_are_police() then
 								:add_child(btnode_create_coroutine(function () char._catch_state = 'SIDE' return bt.state.SUCCESS end))
 								:add_child(node_cache_behind),
 							btnode_create_condition(function ()
-								return char:is_on_side_of(session_current.thives[1]) and count_of_state_pol('SIDE') < 1 end, true),
+								return char:is_on_side_of(session_current.thives[1]) and count_of_state_pol_except(char, 'SIDE') < 1 end, true),
 						bt.state.FAILURE, "CATCHSIDE"))
 					:add_child(
 						btnode_create_sequential()
 							:add_child(btnode_create_coroutine(function () char._catch_state = 'LAST' return bt.state.SUCCESS end))
-							:add_child(node_catch_further_random)
+							:add_child(node_catch_last_random)
 					)
 			)
 		)
@@ -380,6 +415,9 @@ if we_are_police() then
 		print("Is on the exact front of thief: ", is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()))
 		print('')
 
+		statuses = statuses .. char._catch_state
+		statuses = statuses .. '\n'
+
 	end
 
 	local t = session_current.thives[1]:get_move_direction_vector_single()
@@ -389,8 +427,8 @@ if we_are_police() then
 	print("Thief 0 move vector (smoothed): ", t_smoothed[1], t_smoothed[2])
 end
 
-for i = 0, math.pow(2, 23) do
-	local c = math.sqrt(1034576)
-end
+-- for i = 0, math.pow(2, 23) do
+-- 	local c = math.sqrt(1034576)
+-- end
 
 end

@@ -78,8 +78,26 @@ ubtutil.get_nearest_dir = function (vec)
 	return dirs[idx]
 end
 
+ubtutil.right_angel_vec = function (vec)
+	return { -1 * vec[2], vec[1] }
+end
+
 function ubtutil.we_are_police()
 	return Env.INST_INIT == 'POL' end
+
+function ubtutil.has_a_police(cell, session)
+	for i, v in ipairs(session.polices) do
+		if ubtutil.equ_2dpos(v.pos, cell) then return true end
+	end
+	return false
+end
+
+function ubtutil.has_a_thief(cell, session)
+	for i, v in ipairs(session.thives) do
+		if ubtutil.equ_2dpos(v.pos, cell) then return true end
+	end
+	return false
+end
 
 ubtutil.map_debug_data = function(map)
 		local r = LCT.c.RED .. 'Map Debug Data\n' .. LCT.c.RESET
@@ -90,10 +108,12 @@ ubtutil.map_debug_data = function(map)
 				local cell = map:getcell(x, y)
 				local passable = cell:ispassable()
 				local explored = cell:isexplored()
-				if map:getcell(x, y):isonpath() then 		r = r .. string.format('%s ', passable and LCT.c.RED .. '■' .. LCT.c.RESET or '▲') 
-				elseif map:getcell(x, y):isonsight() then 	r = r .. string.format('%s ', passable and LCT.c.WHITE .. '▣' .. LCT.c.RESET or LCT.c.CYAN .. '▓' .. LCT.c.RESET)
-				elseif explored then 		r = r .. string.format('%s ', passable and LCT.c.GREEN .. '▢' .. LCT.c.RESET or LCT.c.BLUE .. '█' .. LCT.c.RESET)
-				else 										r = r .. string.format('%s ', passable and LCT.c.YELLOW .. '□' .. LCT.c.RESET or LCT.c.YELLOW .. '▦' .. LCT.c.RESET) end
+				if ubtutil.has_a_police({x, y}, session_current) then r = r .. string.format('%s ', passable and LCT.c.RED .. 'X' .. LCT.c.RESET or '▲')
+				elseif ubtutil.has_a_thief({x, y}, session_current) then r = r .. string.format('%s ', passable and LCT.c.RED .. 'M' .. LCT.c.RESET or '▲') 
+				elseif map:getcell(x, y):isonpath() then 		r = r .. string.format('%s ', passable and LCT.c.RED .. '*' .. LCT.c.RESET or '▲') 
+				elseif map:getcell(x, y):isonsight() then 	r = r .. string.format('%s ', passable and LCT.c.WHITE .. ' ' .. LCT.c.RESET or LCT.c.CYAN .. '@' .. LCT.c.RESET)
+				elseif explored then 		r = r .. string.format('%s ', passable and LCT.c.GREEN .. '-' .. LCT.c.RESET or LCT.c.BLUE .. '@' .. LCT.c.RESET)
+				else 										r = r .. string.format('%s ', passable and LCT.c.YELLOW .. '-' .. LCT.c.RESET or LCT.c.YELLOW .. '~' .. LCT.c.RESET) end
 			end
 			r = r .. '\n'
 		end

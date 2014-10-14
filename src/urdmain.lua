@@ -8,6 +8,8 @@ session_current = nil
 
 dofile('urdbeh.lua')
 
+statuses = ''
+
 -- interface, called to connect to server
 function init(port, init_inst, teamname)
 	print("UltraBt: Initing...")
@@ -38,6 +40,8 @@ end
 function inst_parser_end(inst)
 	-- print debug data
 	print(session_current:debug_data())
+
+	print(statuses)
 	-- print(session_current.map_obj:debug_data())
 
 	-- reset session
@@ -169,7 +173,7 @@ function inst_parser_inf(inst)
 
 	print(session_current:debug_data())
 	-- changed in CPath
-	-- print(Util.map_debug_data(session_current.map_obj))
+	print(Util.map_debug_data(session_current.map_obj))
 
 
 	-- send move instruction

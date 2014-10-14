@@ -445,7 +445,7 @@ btnode_dec_cond = btnode:new({
 
 	execute = function (self, args)
 		local cond = self._cond_node:execute(args)
-		print("btnode_dec_cond:execute ", self.type_node, " cond ", cond)
+		-- print("btnode_dec_cond:execute ", self.type_node, " cond ", cond)
 		if cond == bt.state.SUCCESS then
 			do return self._node:execute(args) end
 		else return self._fail_ret end
