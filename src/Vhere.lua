@@ -36,13 +36,13 @@ end
 
 function vector_2d_table.__div(op1, op2)
 	if type(op1) == 'table' and type(op2) == 'number' then
-		return vector2d(op1.x/op2+op1.y/op2)
+		return vector2d(op1.x/op2, op1.y/op2)
 	end
 end
 
 function vector_2d_table.__eq(op1, op2)
 	if type(op1) == 'table' and type(op2) == 'table' then
-		return (op1.x == op2.x and op1.y == op2.y)
+		return (op1.x == op2.x and op1.y == op2.y) or (op1.x == op2[1] and op1.y == op2[2])
 	end
 end
 
@@ -69,15 +69,19 @@ function vector_2d_table.__len(op)
 end
 
 function vector_2d_table:dot(op)
-	if type(op2) == 'table' then
-		return self.x*op2.x+self.y*op2.y
-	elseif type(op2) == 'number' then
-		return vector2d(self.x*op2, self.y*op2)
+	if type(op) == 'table' then
+		return self.x*op.x+self.y*op.y
+	elseif type(op) == 'number' then
+		return vector2d(self.x*op, self.y*op)
 	end
 end
 
 function vector_2d_table:len()
 	return math.sqrt(math.pow(self.x, 2)+math.pow(self.y, 2))
+end
+
+function vector_2d_table:angle_cos(op)
+	return self:dot(op) / (self:len() * op:len());
 end
 
 function vector_2d_table:str()
@@ -92,8 +96,22 @@ function vector_2d_table:copy()
 	return vector2d(self.x, self.y)
 end
 
+function vector_2d_table:nom()
+	return (self:copy())/(self:len())
+end
+
 -- setmetatable(vector_2d_table, vector_2d_meta)
 
+local function get_unitvec_rad(rad)
+	return vector2d(math.cos(rad), math.sin(rad))
+end
+
+local function dot(vec1, vec2)
+	return vec1:dot(vec2)
+end
+
 __vhere.vector2d = vector2d
+__vhere.get_unitvec_rad = get_unitvec_rad
+__vhere.dot = dot
 
 return __vhere
