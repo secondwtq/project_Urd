@@ -61,6 +61,7 @@ void RegisterInterface(lua_State *L) {
 						addFunction("next", &Pathfinding::Pathfindingcache::next).
 						addFunction("getCur", &Pathfinding::Pathfindingcache::getCur).
 						addFunction("ended", &Pathfinding::Pathfindingcache::ended).
+						addFunction("setobegin", &Pathfinding::Pathfindingcache::setobegin).
 					endClass().
 				endNamespace().
 				beginClass<CellClass>("CellClass").
@@ -73,6 +74,8 @@ void RegisterInterface(lua_State *L) {
 					addFunction("isonpath", &CellClass::isonpath).
 					addFunction("setonpath", &CellClass::setonpath).
 					addFunction("getpos", &CellClass::getpos).
+					addFunction("setinflfac", &CellClass::setinflfac).
+					addFunction("getinflfac", &CellClass::getinflfac).
 				endClass().
 				beginClass<MapClass>("MapClass").
 					addConstructor<void (*)()>().
@@ -84,6 +87,7 @@ void RegisterInterface(lua_State *L) {
 					addFunction("update_onsight", &MapClass::update_onsight).
 					addFunction("clear_on_sight", &MapClass::clear_on_sight).
 					addFunction("clear_on_path", &MapClass::clear_on_path).
+					addFunction("clear_influence", &MapClass::clear_influence).
 				endClass().
 			endNamespace().
 			beginNamespace("Network").

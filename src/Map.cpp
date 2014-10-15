@@ -36,6 +36,12 @@ void MapClass::update_onsight(const CellStruct& cent, unsigned int sight) {
 		}
 }
 
+void MapClass::clear_influence() {
+	for (unsigned int y = 0; y < this->height; y++)
+		for (unsigned int x = 0; x < this->width; x++)
+			this->getcell(x, y)->setinflfac(1.0);
+}
+
 void MapClass::clear_on_sight() {
 	for (unsigned int y = 0; y < this->height; y++)
 		for (unsigned int x = 0; x < this->width; x++)

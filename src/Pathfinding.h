@@ -23,6 +23,8 @@ namespace Pathfinding {
 
 			void reset() { idx = 0; cache.clear(); }
 
+			void setobegin() { idx = 0; }
+
 			void init(const std::vector<CellClass *> &src) {
 				cache = src;
 			}

@@ -212,6 +212,7 @@ session.SessionObject = object.object:new({
 		Util.findin(self.thives, function (o) o.mov_id = 'T' end)
 		self.map_obj:clear_on_sight()
 		self.map_obj:clear_on_path()
+		self.map_obj:clear_influence()
 	end,
 
 	init_entities = function (self, num_pol, num_thi, type_self)

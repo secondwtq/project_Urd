@@ -275,8 +275,8 @@ namespace Pathfinding {
 				bool better = false;
 				float _G;
 				if (cells[i] == _cells[0] || cells[i] == _cells[2] || cells[i] == _cells[4] || cells[i] == _cells[6])
-					_G = G[px*xx+py] + 1.414;
-				else _G = G[px*xx+py] + 1;
+					_G = G[px*xx+py] + 1.414 * curmap->getcell(px, py)->infl_factor;
+				else _G = G[px*xx+py] + 1 * curmap->getcell(px, py)->infl_factor;
 
 				if (!InsideOpen[id]) {
 					InsideOpen[id] = true;

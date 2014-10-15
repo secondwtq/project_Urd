@@ -33,6 +33,7 @@ static unsigned int _cell_Max_ID = 0;
 class CellClass {
 	public:
 		unsigned int RTTIID = 0;
+		double infl_factor = 1;
 
 		CellStruct LocCell = CellStruct(0, 0);
 
@@ -57,6 +58,10 @@ class CellClass {
 		bool isonpath() { return this->on_path; }
 
 		void setonpath(bool p = true) { this->on_path = p; }
+
+		double getinflfac() { return this->infl_factor; }
+
+		void setinflfac(double value) { this->infl_factor = value; }
 
 		CellStruct getpos() { return this->LocCell; }
 };
@@ -84,6 +89,8 @@ class MapClass {
 		void clear_on_sight();
 
 		void clear_on_path();
+
+		void clear_influence();
 
 		~MapClass() {
 			std::cout << "BAPol: MapClass::~MapClass: disposing map...\n";

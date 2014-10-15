@@ -129,6 +129,12 @@ local function coord_return(local_pos, local_dir, org)
 	return local_coord(local_coord_origin, vector2d(-local_dir.x, local_dir.y), org)
 end
 
+local function pfcache_to_table(cache)
+	local ret = { }
+	
+	return ret
+end
+
 __tyre.build_segment_bresenham = build_segment_bresenham
 __tyre.smooth_8to4 = smooth_8to4
 __tyre.smooth_8to4_withpassable = smooth_8to4_withpassable
