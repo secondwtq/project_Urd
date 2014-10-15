@@ -114,8 +114,17 @@ local function dot(vec1, vec2)
 	return vec1:dot(vec2)
 end
 
+local function print_vectable(src)
+	for i, v in ipairs(src) do
+		io.write(v:str())
+		io.write(' ')
+	end
+	io.write('\n')
+end
+
 __vhere.vector2d = vector2d
 __vhere.get_unitvec_rad = get_unitvec_rad
 __vhere.dot = dot
+__vhere.print_vectable = print_vectable
 
 return __vhere

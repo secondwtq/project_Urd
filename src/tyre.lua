@@ -131,7 +131,15 @@ end
 
 local function pfcache_to_table(cache)
 	local ret = { }
-	
+
+	cache:setobegin()
+	while true do
+		if not cache:ended() then
+			local cellstruct_next = cache:next():getpos()
+			table.insert(ret, vector2d(cellstruct_next.x, cellstruct_next.y))
+		else break end
+	end
+
 	return ret
 end
 
@@ -140,5 +148,6 @@ __tyre.smooth_8to4 = smooth_8to4
 __tyre.smooth_8to4_withpassable = smooth_8to4_withpassable
 __tyre.local_coord = local_coord
 __tyre.coord_return = coord_return
+__tyre.pfcache_to_table = pfcache_to_table
 
 return __tyre

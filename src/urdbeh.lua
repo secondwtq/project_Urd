@@ -2,6 +2,9 @@ dofile('lunalogger.lua')
 
 Util = require 'ubtutil'
 
+vhere = require 'Vhere'
+tyre = require 'tyre'
+
 function we_are_police()
 	return Env.INST_INIT == 'POL' end
 
@@ -239,6 +242,7 @@ if we_are_police() then
 				local target_cell = get_random_cell(furthest, 2)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+
 				coroutine.yield(bt.state.RUNNING)
 			end
 
@@ -282,6 +286,12 @@ if we_are_police() then
 					Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
 					reset_unpassable(session_current.polices)
 					if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+
+					print('generating cache')
+					local table_cache = tyre.pfcache_to_table(cache)
+					print('cache generated')
+					vhere.print_vectable(table_cache)
+
 					coroutine.yield(bt.state.RUNNING)
 				end
 
