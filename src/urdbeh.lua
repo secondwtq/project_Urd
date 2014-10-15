@@ -215,9 +215,9 @@ if we_are_police() then
 				print("\tnode_catch catching...")
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				-- set_all_unpassable(session_current.polices, obj)
+				set_all_unpassable(session_current.polices, obj)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target)), cache)
-				-- reset_unpassable(session_current.polices)
+				reset_unpassable(session_current.polices)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
 			end
@@ -256,7 +256,9 @@ if we_are_police() then
 				local target = get_theif_pos(0)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
 				local lead_cell = get_lead_cell(char.pos, target, Util.get_nearest_dir(session_current.thives[1]:get_move_direction_vec_smoothed()))
+				set_all_unpassable(session_current.polices, obj)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(lead_cell)), cache)
+				reset_unpassable(session_current.polices)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 				coroutine.yield(bt.state.RUNNING)
 			end
@@ -276,7 +278,9 @@ if we_are_police() then
 					local target = get_theif_pos(0)
 					local cache = Utility.Urd.Pathfinding.Pathfindingcache()
 					local target_cell = cell_callback(target, session_current.thives[1])
+					set_all_unpassable(session_current.polices, obj)
 					Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
+					reset_unpassable(session_current.polices)
 					if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 					coroutine.yield(bt.state.RUNNING)
 				end

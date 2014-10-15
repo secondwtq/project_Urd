@@ -29,15 +29,21 @@ end
 
 function test_tyre_local_coord()
 
-	local pos_1 = vhere.vector2d(2, 2)
+	local pos_1 = vhere.vector2d(1, 1)
 	local dir_1 = vhere.vector2d(1, 1)
-	local target_1 = vhere.vector2d(3, 2)
-	print(tyre.local_coord(pos_1, dir_1, target_1):str())
+	local target_1 = vhere.vector2d(2, 1)
+	local local_1 = tyre.local_coord(pos_1, dir_1, target_1)
+	print(local_1:str())
+	print(tyre.coord_return(pos_1, dir_1, local_1):str())
+
+	print()
 
 	pos_1 = vhere.vector2d(2, 2)
-	dir_1 = vhere.vector2d(1, 0)
+	dir_1 = vhere.vector2d(0, 1)
 	target_1 = vhere.vector2d(3, 1)
-	print(tyre.local_coord(pos_1, dir_1, target_1):str())
+	local_1 = tyre.local_coord(pos_1, dir_1, target_1)
+	print(local_1:str())
+	print(tyre.coord_return(pos_1, dir_1, local_1):str())
 
 end
 

@@ -119,19 +119,20 @@ local function local_coord(local_pos, local_dir, target)
 	local offset = target - local_pos
 	local local_dir_nom = local_dir:nom()
 
-	local theta_cos = vector2d(0, 1):angle_cos(local_dir_nom)
-	local theta = math.acos(theta_cos)
-	local theta_sin = math.sin(theta)
-
-	-- print(offset:len(), local_dir:len())
-	-- print(theta_sin, theta_cos)
-
 	return vector2d(offset:dot(vector2d(local_dir_nom.y, -local_dir_nom.x)), offset:dot(local_dir_nom))
+end
+
+local function coord_return(local_pos, local_dir, org)
+	local local_dir_nom = local_dir:nom()
+	local local_coord_origin = vector2d(vhere.dot(-local_pos, vector2d(local_dir_nom.y, -local_dir_nom.x)), vhere.dot(-local_pos, local_dir_nom))
+
+	return local_coord(local_coord_origin, vector2d(-local_dir.x, local_dir.y), org)
 end
 
 __tyre.build_segment_bresenham = build_segment_bresenham
 __tyre.smooth_8to4 = smooth_8to4
 __tyre.smooth_8to4_withpassable = smooth_8to4_withpassable
 __tyre.local_coord = local_coord
+__tyre.coord_return = coord_return
 
 return __tyre

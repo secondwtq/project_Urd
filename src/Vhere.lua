@@ -100,6 +100,10 @@ function vector_2d_table:nom()
 	return (self:copy())/(self:len())
 end
 
+function vector_2d_table:unpack()
+	return self.x, self.y
+end
+
 -- setmetatable(vector_2d_table, vector_2d_meta)
 
 local function get_unitvec_rad(rad)

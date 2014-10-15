@@ -392,21 +392,21 @@ namespace Pathfinding {
 				{			
 					CellClass *c = nullptr;
 					if (cell->LocCell.x == v.x+1 && cell->LocCell.y == v.y+1) {
-						if ((c = curmap->getcell(v.x+1, v.y)) && c->ispassable())
-							_cache.push_back(c);
-						else if (((c = curmap->getcell(v.x, v.y+1)) && c->ispassable())) _cache.push_back(c);
+						if ((c = curmap->getcell(v.x+1, v.y)) && c->ispassable()) 
+							{ c->setonpath(true); _cache.push_back(c); }
+						else if (((c = curmap->getcell(v.x, v.y+1)) && c->ispassable())) { c->setonpath(true); _cache.push_back(c); }
 					} else if (cell->LocCell.x == v.x-1 && cell->LocCell.y == v.y-1) {
 						if ((c = curmap->getcell(v.x, v.y-1)) && c->ispassable())
-							_cache.push_back(c);
-						else if (((c = curmap->getcell(v.x-1, v.y)) && c->ispassable())) _cache.push_back(c);
+							{ c->setonpath(true); _cache.push_back(c); }
+						else if (((c = curmap->getcell(v.x-1, v.y)) && c->ispassable())) { c->setonpath(true); _cache.push_back(c); }
 					} else if (cell->LocCell.x == v.x-1 && cell->LocCell.y == v.y+1) {
 						if ((c = curmap->getcell(v.x-1, v.y)) && c->ispassable())
-							_cache.push_back(curmap->getcell(v.x-1, v.y));
-						else if (((c = curmap->getcell(v.x, v.y+1)) && c->ispassable())) _cache.push_back(c);
+							{ c->setonpath(true); _cache.push_back(c); }
+						else if (((c = curmap->getcell(v.x, v.y+1)) && c->ispassable())) { c->setonpath(true); _cache.push_back(c); }
 					} else if (cell->LocCell.x == v.x+1 && cell->LocCell.y == v.y-1) {
 						if ((c = curmap->getcell(v.x, v.y-1)) && c->ispassable())
-							_cache.push_back(curmap->getcell(v.x, v.y-1));
-						else if (((c = curmap->getcell(v.x+1, v.y)) && c->ispassable())) _cache.push_back(c);
+							{ c->setonpath(true); _cache.push_back(c); }
+						else if (((c = curmap->getcell(v.x+1, v.y)) && c->ispassable())) { c->setonpath(true); _cache.push_back(c); }
 					}
 				}
 			}
