@@ -20,7 +20,7 @@ namespace Pathfinding {
 		float *G;
 		float *H;
 		float *F;
-		
+
 		int numOpen;
 
 		int *bi_t;
@@ -37,6 +37,9 @@ namespace Pathfinding {
 		std::cout << "BAPol: Pathfinding::pf_init: initing pathfinding cache...\n";
 
 		unsigned int _x = map->width, _y = map->height;
+
+
+
 		curmap = map;
 
 		xx = _x, yy = _y, xx_ = _x-1, yy_ = _y-1;
@@ -179,7 +182,7 @@ namespace Pathfinding {
 			}
 		}
 
-		minF = IDCells[bi_t[1]]; 
+		minF = IDCells[bi_t[1]];
 		if (InsideOpen[bi_t[1]]) {
 			InsideOpen[bi_t[1]] = false;
 			bi_t[1] = bi_t[numOpen];
@@ -214,7 +217,7 @@ namespace Pathfinding {
 			F[CellIDs[ss.x*xx+ss.y]] = abs(ss.x-destCell.x) + abs(ss.y-destCell.y);
 			G[ss.x*xx+ss.y] = 0;
 			Fathers[ss.x*xx+ss.y] = CellStruct(-1, -1);
-			
+
 			Find_rec();
 
 			vector<CellClass *> _cache;
@@ -319,7 +322,7 @@ namespace Pathfinding {
 			}
 		}
 
-		minF = IDCells[bi_t[1]]; 
+		minF = IDCells[bi_t[1]];
 		if (InsideOpen[bi_t[1]]) {
 			InsideOpen[bi_t[1]] = false;
 			bi_t[1] = bi_t[numOpen];
@@ -354,14 +357,14 @@ namespace Pathfinding {
 			F[CellIDs[ss.x*xx+ss.y]] = abs(ss.x-destCell.x) + abs(ss.y-destCell.y);
 			G[ss.x*xx+ss.y] = 0;
 			Fathers[ss.x*xx+ss.y] = CellStruct(-1, -1);
-			
+
 			Find_rec_8();
 
 			vector<CellClass *> _cache;
 			CellStruct v = Fathers[destCell.x*xx+destCell.y];
 			_cache.push_back(dest);
 
-			{			
+			{
 				CellClass *c = nullptr;
 				if (dest->LocCell.x == v.x+1 && dest->LocCell.y == v.y+1) {
 					if ((c = curmap->getcell(v.x+1, v.y)) && c->ispassable())
@@ -389,10 +392,10 @@ namespace Pathfinding {
 				destCell.x = v.x, destCell.y = v.y;
 				v = Fathers[destCell.x*xx+destCell.y];
 
-				{			
+				{
 					CellClass *c = nullptr;
 					if (cell->LocCell.x == v.x+1 && cell->LocCell.y == v.y+1) {
-						if ((c = curmap->getcell(v.x+1, v.y)) && c->ispassable()) 
+						if ((c = curmap->getcell(v.x+1, v.y)) && c->ispassable())
 							{ c->setonpath(true); _cache.push_back(c); }
 						else if (((c = curmap->getcell(v.x, v.y+1)) && c->ispassable())) { c->setonpath(true); _cache.push_back(c); }
 					} else if (cell->LocCell.x == v.x-1 && cell->LocCell.y == v.y-1) {

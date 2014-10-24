@@ -281,16 +281,16 @@ if we_are_police() then
 					print("\tnode_catch " .. name .. " catching...")
 					local target = get_theif_pos(0)
 					local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-					local target_cell = cell_callback(target, session_current.thives[1])
 					set_all_unpassable(session_current.polices, obj)
+					local target_cell = cell_callback(target, session_current.thives[1])
 					Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
 					reset_unpassable(session_current.polices)
 					if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
 
-					print('generating cache')
-					local table_cache = tyre.pfcache_to_table(cache)
-					print('cache generated')
-					vhere.print_vectable(table_cache)
+					-- print('generating cache')
+					-- local table_cache = tyre.pfcache_to_table(cache)
+					-- print('cache generated')
+					-- vhere.print_vectable(table_cache)
 
 					coroutine.yield(bt.state.RUNNING)
 				end

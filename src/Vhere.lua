@@ -123,6 +123,7 @@ local function print_vectable(src)
 end
 
 __vhere.vector2d = vector2d
+
 __vhere.get_unitvec_rad = get_unitvec_rad
 __vhere.dot = dot
 __vhere.print_vectable = print_vectable
