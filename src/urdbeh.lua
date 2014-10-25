@@ -168,7 +168,7 @@ end
 
 function set_all_unpassable(set, except)
 	for i, v in ipairs(set) do
-		if v ~= except then
+		if v ~= except and v.pos.x ~= except.pos.x and v.pos.y ~= except.pos.y then
 			session_current.map_obj:getcell(table.unpack(v.pos)):setunpassable(true)
 		end
 	end
@@ -195,14 +195,25 @@ if we_are_police() then
 
 			local search_target = find_search_pos(obj)
 
-			print("Search dest set: ", search_target[1], search_target[2])
+			print("Search dest set_: ", search_target[1], search_target[2])
 
 			while true do
+				print("node_search searching")
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
 				set_all_unpassable(session_current.polices, obj)
+				print("node_search pathfinding")
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(search_target)), cache)
 				reset_unpassable(session_current.polices)
+				print("node_search moving")
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+
+
+				local table_cache = tyre.pfcache_to_table(cache)
+				for i, v in ipairs(table_cache) do
+					session_current.map_obj:getcell(v:unpack()):setinflfac(3.0)
+				end
+
+				print("node_search yielding")
 				coroutine.yield(bt.state.RUNNING)
 			end
 
@@ -222,31 +233,17 @@ if we_are_police() then
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target)), cache)
 				reset_unpassable(session_current.polices)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+
+
+				local table_cache = tyre.pfcache_to_table(cache)
+				for i, v in ipairs(table_cache) do
+					session_current.map_obj:getcell(v:unpack()):setinflfac(3.0)
+				end
+
 				coroutine.yield(bt.state.RUNNING)
 			end
 
 			print("catch success")
-			return bt.state.SUCCESS
-		end)
-
-		local node_catch_further_random = btnode_create_coroutine(function (self, args)
-			local obj = args.obj
-
-			print("entering catch further random mode...")
-
-			while true do
-				print("\tnode_catch_further_random catching further random...")
-				local target = get_theif_pos(0)
-				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				local furthest = get_furthest_cell(target, Util.get_nearest_dir(session_current.thives[1]:get_move_direction_vec_smoothed()), char.pos)
-				local target_cell = get_random_cell(furthest, 2)
-				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
-				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
-
-				coroutine.yield(bt.state.RUNNING)
-			end
-
-			print ("catch further random success")
 			return bt.state.SUCCESS
 		end)
 
@@ -264,6 +261,13 @@ if we_are_police() then
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(lead_cell)), cache)
 				reset_unpassable(session_current.polices)
 				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+
+
+				local table_cache = tyre.pfcache_to_table(cache)
+				for i, v in ipairs(table_cache) do
+					session_current.map_obj:getcell(v:unpack()):setinflfac(3.0)
+				end
+
 				coroutine.yield(bt.state.RUNNING)
 			end
 
@@ -285,7 +289,13 @@ if we_are_police() then
 					local target_cell = cell_callback(target, session_current.thives[1])
 					Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
 					reset_unpassable(session_current.polices)
+
 					if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+
+					local table_cache = tyre.pfcache_to_table(cache)
+					for i, v in ipairs(table_cache) do
+						session_current.map_obj:getcell(v:unpack()):setinflfac(3.0)
+					end
 
 					-- print('generating cache')
 					-- local table_cache = tyre.pfcache_to_table(cache)
@@ -393,7 +403,7 @@ if we_are_police() then
 					:add_child(
 						btnode_create_sequential()
 							:add_child(btnode_create_coroutine(function () char._catch_state = 'LAST' return bt.state.SUCCESS end))
-							:add_child(node_catch_last_random)
+							:add_child(node_catch)
 					)
 			)
 		)

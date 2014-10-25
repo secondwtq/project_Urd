@@ -1,8 +1,8 @@
 lunacolort = { }
 
-__available = False
+__available = false
 
-if _URD_HOSTPLATFORM_ISPOSIX_ then __available = true end
+if _URD_HOSTPLATFORM_ISPOSIX_ == true then __available = true end
 
 __colors = { "BLACK", "RED", "GREEN", "YELLOW", "BLUE", "MAGENTA", "CYAN", "WHITE", "RESET" }
 

@@ -37,8 +37,7 @@ namespace Pathfinding {
 		std::cout << "BAPol: Pathfinding::pf_init: initing pathfinding cache...\n";
 
 		unsigned int _x = map->width, _y = map->height;
-
-
+		// printf("%d %d\n", _x, _y);
 
 		curmap = map;
 
@@ -56,14 +55,18 @@ namespace Pathfinding {
 		bi_t = new int[llmww];
 		IDCells = new CellStruct[llmww];
 		CellIDs = new int[llmww];
-		for (int i = 0; i <= xx; i++)
-			for (int j = 0; j < yy; j++) {
+
+		// printf("xx: %d\n", xx);
+		for (int i = 0; i < xx; i++)
+			for (int j = 0; j <= yy; j++) {
 				auto cell = curmap->getcell(i, j);
 				// Cells[i*xx+j] = cell;
 
 				if (cell) {
 					IDCells[cell->RTTIID] = CellStruct(i, j);
-					CellIDs[i*xx+j] = cell->RTTIID;
+					// printf("%d %d %d %x\n", i, xx, j, cell);
+					// printf("%d\n", cell->RTTIID);
+					CellIDs[i+j*xx] = cell->RTTIID;
 				}
 			}
 	}
@@ -101,7 +104,7 @@ namespace Pathfinding {
 
 	void Find_rec() {
 		int px = minF.x, py = minF.y;
-		InsideClose[CellIDs[px*xx+py]] = true;
+		InsideClose[CellIDs[px+py*xx]] = true;
 		if (minF == destCell) return;
 
 		static const std::size_t N_CELLS = 8;
@@ -135,11 +138,11 @@ namespace Pathfinding {
 
 		for (size_t i = 0; i < num; i++) {
 			int x = cells[i].x, y = cells[i].y;
-			int offset = x*xx+y;
+			int offset = x+y*xx;
 			int id = CellIDs[offset];
 			if (!InsideClose[id]) {
 				bool better = false;
-				int _G = G[px*xx+py] + 1;
+				int _G = G[px+py*xx] + 1;
 
 				if (!InsideOpen[id]) {
 					InsideOpen[id] = true;
@@ -214,21 +217,21 @@ namespace Pathfinding {
 			minF = ss;
 			destCell = CellStruct(dest->LocCell.x, dest->LocCell.y);
 
-			F[CellIDs[ss.x*xx+ss.y]] = abs(ss.x-destCell.x) + abs(ss.y-destCell.y);
-			G[ss.x*xx+ss.y] = 0;
-			Fathers[ss.x*xx+ss.y] = CellStruct(-1, -1);
+			F[CellIDs[ss.x+ss.y*xx]] = abs(ss.x-destCell.x) + abs(ss.y-destCell.y);
+			G[ss.x+ss.y*xx] = 0;
+			Fathers[ss.x+ss.y*xx] = CellStruct(-1, -1);
 
 			Find_rec();
 
 			vector<CellClass *> _cache;
-			CellStruct v = Fathers[destCell.x*xx+destCell.y];
+			CellStruct v = Fathers[destCell.x+destCell.y*xx];
 			_cache.push_back(dest);
 			while (v.x != -1) {
 				CellClass *cell = curmap->getcell(v.x, v.y);
 				_cache.push_back(cell);
 				cell->setonpath(true);
 				destCell.x = v.x, destCell.y = v.y;
-				v = Fathers[destCell.x*xx+destCell.y];
+				v = Fathers[destCell.x+destCell.y*xx];
 			}
 			cache->initFromRev(_cache);
 			return true;
@@ -238,7 +241,7 @@ namespace Pathfinding {
 
 	void Find_rec_8() {
 		int px = minF.x, py = minF.y;
-		InsideClose[CellIDs[px*xx+py]] = true;
+		InsideClose[CellIDs[px+py*xx]] = true;
 		if (minF == destCell) return;
 
 		static const std::size_t N_CELLS = 8;
@@ -272,14 +275,14 @@ namespace Pathfinding {
 
 		for (size_t i = 0; i < num; i++) {
 			int x = cells[i].x, y = cells[i].y;
-			int offset = x*xx+y;
+			int offset = x+y*xx;
 			int id = CellIDs[offset];
 			if (!InsideClose[id]) {
 				bool better = false;
 				float _G;
 				if (cells[i] == _cells[0] || cells[i] == _cells[2] || cells[i] == _cells[4] || cells[i] == _cells[6])
-					_G = G[px*xx+py] + 1.414 * curmap->getcell(px, py)->infl_factor;
-				else _G = G[px*xx+py] + 1 * curmap->getcell(px, py)->infl_factor;
+					_G = G[px+py*xx] + 1.414 * curmap->getcell(px, py)->infl_factor;
+				else _G = G[px+py*xx] + 1 * curmap->getcell(px, py)->infl_factor;
 
 				if (!InsideOpen[id]) {
 					InsideOpen[id] = true;
@@ -354,14 +357,14 @@ namespace Pathfinding {
 			minF = ss;
 			destCell = CellStruct(dest->LocCell.x, dest->LocCell.y);
 
-			F[CellIDs[ss.x*xx+ss.y]] = abs(ss.x-destCell.x) + abs(ss.y-destCell.y);
-			G[ss.x*xx+ss.y] = 0;
-			Fathers[ss.x*xx+ss.y] = CellStruct(-1, -1);
+			F[CellIDs[ss.x+ss.y*xx]] = abs(ss.x-destCell.x) + abs(ss.y-destCell.y);
+			G[ss.x+ss.y*xx] = 0;
+			Fathers[ss.x+ss.y*xx] = CellStruct(-1, -1);
 
 			Find_rec_8();
 
 			vector<CellClass *> _cache;
-			CellStruct v = Fathers[destCell.x*xx+destCell.y];
+			CellStruct v = Fathers[destCell.x+destCell.y*xx];
 			_cache.push_back(dest);
 
 			{
@@ -390,7 +393,7 @@ namespace Pathfinding {
 				_cache.push_back(cell);
 				cell->setonpath(true);
 				destCell.x = v.x, destCell.y = v.y;
-				v = Fathers[destCell.x*xx+destCell.y];
+				v = Fathers[destCell.x+destCell.y*xx];
 
 				{
 					CellClass *c = nullptr;

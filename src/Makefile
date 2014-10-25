@@ -5,7 +5,7 @@ BUILD_PATH = ./Build/
 BINARY_PARH = .
 SOURCE_PATH = ./
 
-CXXFLAGS_=-Wall -std=c++11 -O2 -isystem../include
+CXXFLAGS_=-Wall -std=c++11 -O2 -isystem../include -g
 LDFLAGS_=-Wall -L../lib/
 
 CXXFLAGS_DARWIN = 

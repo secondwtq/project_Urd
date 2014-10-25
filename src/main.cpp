@@ -21,7 +21,7 @@ extern "C" {
 
 string TEAM_NAME = "FLYIT";
 
-string SERVER_IP = "172.27.35.1";
+string SERVER_IP = "127.0.0.1";
 unsigned int SERVER_PORT = 31000;
 
 string SELF_ROLE = "POL";
@@ -140,7 +140,7 @@ void init() {
 
 		lua_pushstring(L, "WINDOWS");
 	#else
-		lua_pushboolean(L, true);
+		lua_pushboolean(L, false);
 		lua_setglobal(L, "_URD_HOSTPLATFORM_ISPOSIX_");
 
 		lua_pushstring(L, "UNKNOWN");
@@ -199,7 +199,7 @@ void parse_cmd_args(int argc, const char *argv[]) {
 		("serverport,s", _argparser::value<unsigned int>(&SERVER_PORT)->default_value(SERVER_PORT), "set the receive port of server.")
 		("instrole,i", _argparser::value<string>(&SELF_ROLE)->default_value(SELF_ROLE), "set the role of client.")
 		("recport,r", _argparser::value<unsigned int>(&SELF_PORT)->default_value(SELF_PORT), "set the receive port of client.")
-		("userscript,u", _argparser::value<string>(&LUA_MAINSCRIPT), "set the main script file, use the internal one if empty.");
+		("userscript,u", _argparser::value<string>(&LUA_MAINSCRIPT)->default_value("urdmain.lua"), "set the main script file, use the internal one if empty.");
 
 	//	positional options
 	_argparser::positional_options_description pos_desc;

@@ -13,7 +13,7 @@ CellClass *MapClass::getcell(int x, int y) {
 	// printf("getting cell %d %d\n", x, y);
 	if (x < 0 || y < 0) return nullptr;
 	if (x > this->width-1 || y > this->height-1) return nullptr;
-	return this->Cells[(y*width)+x];
+	return this->Cells[x+y*width];
 }
 
 void MapClass::update_explored(const CellStruct& cent, unsigned int sight) {
