@@ -119,10 +119,11 @@ def search_requires(src_node):
 		if match != None:
 			if (line.find(COMMENT_MARK) == -1) or (line.find(COMMENT_MARK) < line.find('require')):
 				module_name = match.groups()[0]
-				print ("module %s required by %s." % (module_name, src_node.name), file=sys.stderr)
+				print ("module %s required by %s %d." % (module_name, src_node.name, src_node.level), file=sys.stderr)
 
 				global node_root
 				duped, dup_child = node_root.has_child_rec(module_name)
+				# print("\t\t\tHas child %s %d." % (module_name, duped))
 
 				if duped == False:
 					node_child = dependency_node(module_name, src_node)
@@ -132,9 +133,12 @@ def search_requires(src_node):
 					search_requires(node_child)
 					node_child.code = node_child.code.replace('require', '__DEFINED.__get')
 				else:
+					# print("\t\t\tDup node %s, %d %d." % (dup_child.name, src_node.level, dup_child.level))
 					if src_node.level+1 > dup_child.level:
-						node_child.parent.remove_child(node_child.name)
-						src_node.append_child(dup_child)
+						dup_child.parent.remove_child(dup_child.name)
+						node_child = dependency_node(module_name, src_node)
+						node_child.code = dup_child.code
+						src_node.append_child(node_child)
 
 def gen_list(root):
 	max_level = root.get_max_child_level()
