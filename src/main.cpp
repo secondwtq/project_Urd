@@ -199,7 +199,7 @@ void parse_cmd_args(int argc, const char *argv[]) {
 		("serverport,s", _argparser::value<unsigned int>(&SERVER_PORT)->default_value(SERVER_PORT), "set the receive port of server.")
 		("instrole,i", _argparser::value<string>(&SELF_ROLE)->default_value(SELF_ROLE), "set the role of client.")
 		("recport,r", _argparser::value<unsigned int>(&SELF_PORT)->default_value(SELF_PORT), "set the receive port of client.")
-		("userscript,u", _argparser::value<string>(&LUA_MAINSCRIPT)->default_value("urdmain.lua"), "set the main script file, use the internal one if empty.");
+		("userscript,u", _argparser::value<string>(&LUA_MAINSCRIPT), "set the main script file, use the internal one if empty.");
 
 	//	positional options
 	_argparser::positional_options_description pos_desc;

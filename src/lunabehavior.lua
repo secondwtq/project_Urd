@@ -1,4 +1,3 @@
-object = require('object')
 dofile('lunalogger.lua')
 
 bt = { }

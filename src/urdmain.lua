@@ -4,6 +4,13 @@ Util = require 'ubtutil'
 
 directions = require 'directions'
 
+object = require 'object'
+
+Util = require 'ubtutil'
+
+vhere = require 'Vhere'
+tyre = require 'tyre'
+
 session_current = nil
 
 dofile('urdbeh.lua')

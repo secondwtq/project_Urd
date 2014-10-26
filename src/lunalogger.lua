@@ -1,5 +1,3 @@
-object = require('object')
-
 lloger_buffer = object.object:new({
 
 	items = { },

@@ -21,9 +21,12 @@
 #include "Utils.h"
 
 namespace LuaUtils {
+
+	#if defined(__MACH__) && defined(__APPLE__)
 	namespace {
 		static double _MACH_timeConvert = 0.0;
 	}
+	#endif
 
 	void init() {
 		#if defined(__MACH__) && defined(__APPLE__)

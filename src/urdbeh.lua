@@ -1,10 +1,5 @@
 dofile('lunalogger.lua')
 
-Util = require 'ubtutil'
-
-vhere = require 'Vhere'
-tyre = require 'tyre'
-
 function we_are_police()
 	return Env.INST_INIT == 'POL' end
 
