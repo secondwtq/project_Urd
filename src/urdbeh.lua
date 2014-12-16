@@ -80,6 +80,39 @@ function find_search_pos(obj)
 		_u = _u * -1
 	end
 
+	-- print("entering loop")
+	-- while true do
+	-- 	print("loop entered")
+	-- 	local vec_random = vhere.vector2d(math.random(), math.random())
+	-- 	print("vec random created")
+	-- 	vec_random:nom()
+
+	-- 	print("vec random got")
+	-- 	local radius = math.min(session_current.map_obj.width, session_current.map_obj.height)/2
+	-- 	vec_random = vec_random * radius
+	-- 	print("vec world scaled")
+
+	-- 	local vec_world = tyre.coord_return(vhere.vector2d(obj.pos[1], obj.pos[2]), vhere.vector2d(0, 1), vec_random)
+
+	-- 	print("vec world got")
+	-- 	vec_world.x = math.floor(vec_world.x)
+	-- 	vec_world.y = math.floor(vec_world.y)
+
+	-- 	local cell = session_current.map_obj:getcell(vec_world:unpack())
+
+	-- 	print("cell found")
+	-- 	if cell then
+
+	-- 		local passable = cell:ispassable()
+
+	-- 		if passable then
+	-- 			print("returning ", vec_world:unpack())
+	-- 			return { vec_world.x, vec_world.y }
+	-- 		end
+
+	-- 	end
+	-- end
+
 end
 
 function get_random_cell(origin, radius)
@@ -193,6 +226,11 @@ if we_are_police() then
 			print("Search dest set_: ", search_target[1], search_target[2])
 
 			while true do
+
+				if session_current.map_obj:getcell(table.unpack(search_target)):ispassable() == false then
+					search_target = find_search_pos(obj)
+				end
+
 				print("node_search searching")
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
 				set_all_unpassable(session_current.polices, obj)
@@ -345,13 +383,13 @@ if we_are_police() then
 						:add_child(btnode_create_coroutine(function () char._catch_state = 'INITIAL' return bt.state.SUCCESS end))
 						:add_child(node_search),
 					btnode_create_condition(thief_found, false)))
-			:add_child(
-				btnode_createdec_cond(
-					btnode_create_sequential()
-						:add_child(btnode_create_coroutine(function () char._catch_state = 'SEARCH' return bt.state.SUCCESS end))
-						:add_child(node_search),
-					btnode_create_condition(function ()
-						return thief_onsight(1) end, false)))
+			-- :add_child(
+			-- 	btnode_createdec_cond(
+			-- 		btnode_create_sequential()
+			-- 			-- :add_child(btnode_create_coroutine(function () char._catch_state = 'SEARCH' return bt.state.SUCCESS end))
+			-- 			:add_child(node_search),
+			-- 		btnode_create_condition(function ()
+			-- 			return thief_onsight(1) end, bt.state.FAILURE)))
 			:add_child(
 				btnode_create_priority_cond()
 					:add_child(
