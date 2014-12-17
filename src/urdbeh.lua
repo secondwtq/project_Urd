@@ -218,13 +218,9 @@ if we_are_police() then
 
 		local node_search = btnode_create_coroutine(function (self, args)
 			local obj = args.obj
-
 			print("Searching for target...")
-
 			local search_target = find_search_pos(obj)
-
 			print("Search dest set_: ", search_target[1], search_target[2])
-
 			while true do
 
 				if session_current.map_obj:getcell(table.unpack(search_target)):ispassable() == false then
@@ -249,9 +245,9 @@ if we_are_police() then
 				print("node_search yielding")
 				coroutine.yield(bt.state.RUNNING)
 			end
-
 			return bt.state.SUCCESS
 		end)
+		node_search.evaluate = function () return (thief_found() == false) end
 
 		local node_catch = btnode_create_coroutine(function (self, args)
 			local obj = args.obj
@@ -375,71 +371,96 @@ if we_are_police() then
 
 		print("initing brain...")
 
-	char.brain = btnode_create_repeat(1024,
-		btnode_create_sequential()
+		char.brain = btnode_create_repeat(512,
+			btnode_create_sequential()
 			:add_child(
-				btnode_createdec_cond(
-					btnode_create_sequential()
-						:add_child(btnode_create_coroutine(function () char._catch_state = 'INITIAL' return bt.state.SUCCESS end))
-						:add_child(node_search),
-					btnode_create_condition(thief_found, false)))
-			-- :add_child(
-			-- 	btnode_createdec_cond(
-			-- 		btnode_create_sequential()
-			-- 			-- :add_child(btnode_create_coroutine(function () char._catch_state = 'SEARCH' return bt.state.SUCCESS end))
-			-- 			:add_child(node_search),
-			-- 		btnode_create_condition(function ()
-			-- 			return thief_onsight(1) end, bt.state.FAILURE)))
+				node_search
+			)
 			:add_child(
-				btnode_create_priority_cond()
-					:add_child(
-						btnode_createdec_cond(
-							btnode_create_sequential()
-								:add_child(btnode_create_coroutine(function () char._catch_state = 'FRONT' return bt.state.SUCCESS end))
-								:add_child(node_catch), 
-							btnode_create_condition(function ()
-								return is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) end),
-							bt.state.FAILURE, "CATCH_ACTUALLY_FRONT"))
-					:add_child(
-						btnode_createdec_cond(
-							btnode_create_sequential()
-								:add_child(btnode_create_coroutine(function () char._catch_state = 'NEAR' return bt.state.SUCCESS end))
-								:add_child(node_catch),
-							btnode_create_condition(function ()
-								return Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol_except(char, 'NEAR') < 1 end),
-						bt.state.FAILURE, "CATCH_NEAR"))
-
-					:add_child(
-						btnode_createdec_cond(
-							btnode_create_sequential()
-								:add_child(btnode_create_coroutine(function () char._catch_state = 'BEHIND' return bt.state.SUCCESS end))
-								:add_child(node_cache_behind),
-							btnode_create_condition(function ()
-								return char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'BEHIND') < 2 end),
-							bt.state.FAILURE, "CATCH_BEHIND"))
-					:add_child(
-						btnode_createdec_cond(
-							btnode_create_sequential()
-								:add_child(btnode_create_coroutine(function () char._catch_state = 'FUR' return bt.state.SUCCESS end))
-								:add_child(node_catch_further),
-							btnode_create_condition(function ()
-								return (is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'FUR') < 2) end),
-						bt.state.FAILURE, "CATCHFUR"))
-					:add_child(
-						btnode_createdec_cond(
-							btnode_create_sequential()
-								:add_child(btnode_create_coroutine(function () char._catch_state = 'SIDE' return bt.state.SUCCESS end))
-								:add_child(node_cache_behind),
-							btnode_create_condition(function ()
-								return char:is_on_side_of(session_current.thives[1]) and count_of_state_pol_except(char, 'SIDE') < 1 end, true),
-						bt.state.FAILURE, "CATCHSIDE"))
-					:add_child(
-						btnode_create_sequential()
-							:add_child(btnode_create_coroutine(function () char._catch_state = 'LAST' return bt.state.SUCCESS end))
-							:add_child(node_catch)
-					)
+				btnode_create_priority()
+				:add_child(
+					btnode_createdec_cond(node_catch, function () return 
+						is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) end,
+						"CATCH_ACTUALLY_FRONT"))
+				:add_child(
+					btnode_createdec_cond(node_catch, function () return 
+						Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol_except(char, 'NEAR') < 1 end,
+						"CATCH_NEAR"))
+				:add_child(
+					btnode_createdec_cond(node_cache_behind, function () return 
+						char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'BEHIND') < 2 end,
+						"CATCH_BEHIND"))
+				:add_child(
+					node_catch
+				)
 			)
 		)
+
+	-- char.brain = btnode_create_repeat(1024,
+	-- 	btnode_create_sequential()
+	-- 		:add_child(
+	-- 			btnode_createdec_cond(
+	-- 				btnode_create_sequential()
+	-- 					:add_child(btnode_create_coroutine(function () char._catch_state = 'INITIAL' return bt.state.SUCCESS end))
+	-- 					:add_child(node_search),
+	-- 				btnode_create_condition(thief_found, false)))
+	-- 		-- :add_child(
+	-- 		-- 	btnode_createdec_cond(
+	-- 		-- 		btnode_create_sequential()
+	-- 		-- 			-- :add_child(btnode_create_coroutine(function () char._catch_state = 'SEARCH' return bt.state.SUCCESS end))
+	-- 		-- 			:add_child(node_search),
+	-- 		-- 		btnode_create_condition(function ()
+	-- 		-- 			return thief_onsight(1) end, bt.state.FAILURE)))
+	-- 		:add_child(
+	-- 			btnode_create_priority_cond()
+	-- 				:add_child(
+	-- 					btnode_createdec_cond(
+	-- 						btnode_create_sequential()
+	-- 							:add_child(btnode_create_coroutine(function () char._catch_state = 'FRONT' return bt.state.SUCCESS end))
+	-- 							:add_child(node_catch), 
+	-- 						btnode_create_condition(function ()
+	-- 							return is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) end),
+	-- 						bt.state.FAILURE, "CATCH_ACTUALLY_FRONT"))
+	-- 				:add_child(
+	-- 					btnode_createdec_cond(
+	-- 						btnode_create_sequential()
+	-- 							:add_child(btnode_create_coroutine(function () char._catch_state = 'NEAR' return bt.state.SUCCESS end))
+	-- 							:add_child(node_catch),
+	-- 						btnode_create_condition(function ()
+	-- 							return Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol_except(char, 'NEAR') < 1 end),
+	-- 					bt.state.FAILURE, "CATCH_NEAR"))
+
+	-- 				:add_child(
+	-- 					btnode_createdec_cond(
+	-- 						btnode_create_sequential()
+	-- 							:add_child(btnode_create_coroutine(function () char._catch_state = 'BEHIND' return bt.state.SUCCESS end))
+	-- 							:add_child(node_cache_behind),
+	-- 						btnode_create_condition(function ()
+	-- 							return char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'BEHIND') < 2 end),
+	-- 						bt.state.FAILURE, "CATCH_BEHIND"))
+	-- 				:add_child(
+	-- 					btnode_createdec_cond(
+	-- 						btnode_create_sequential()
+	-- 							:add_child(btnode_create_coroutine(function () char._catch_state = 'FUR' return bt.state.SUCCESS end))
+	-- 							:add_child(node_catch_further),
+	-- 						btnode_create_condition(function ()
+	-- 							return (is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'FUR') < 2) end),
+	-- 					bt.state.FAILURE, "CATCHFUR"))
+	-- 				:add_child(
+	-- 					btnode_createdec_cond(
+	-- 						btnode_create_sequential()
+	-- 							:add_child(btnode_create_coroutine(function () char._catch_state = 'SIDE' return bt.state.SUCCESS end))
+	-- 							:add_child(node_cache_behind),
+	-- 						btnode_create_condition(function ()
+	-- 							return char:is_on_side_of(session_current.thives[1]) and count_of_state_pol_except(char, 'SIDE') < 1 end, true),
+	-- 					bt.state.FAILURE, "CATCHSIDE"))
+	-- 				:add_child(
+	-- 					btnode_create_sequential()
+	-- 						:add_child(btnode_create_coroutine(function () char._catch_state = 'LAST' return bt.state.SUCCESS end))
+	-- 						:add_child(node_catch)
+	-- 				)
+	-- 		)
+	-- 	)
 
 		logger = lloger:new()
 		logger:init()
