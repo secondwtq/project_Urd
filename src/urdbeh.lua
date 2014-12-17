@@ -371,27 +371,35 @@ if we_are_police() then
 
 		print("initing brain...")
 
-		char.brain = btnode_create_repeat(512,
-			btnode_create_sequential()
-			:add_child(
-				node_search
+		char.brain = bnd_repeat(512,
+			bnd_sequential()
+			:child(
+				bdec_acomfront(node_search, function () char._catch_state = 'INITIAL' end)
 			)
-			:add_child(
-				btnode_create_priority()
-				:add_child(
-					btnode_createdec_cond(node_catch, function () return 
+			:child(
+				bnd_priority()
+				:child(
+					bdec_cond(bdec_acomfront(node_catch, function () char._catch_state = 'FRONT' end), function () return 
 						is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) end,
 						"CATCH_ACTUALLY_FRONT"))
-				:add_child(
-					btnode_createdec_cond(node_catch, function () return 
+				:child(
+					bdec_cond(bdec_acomfront(node_catch, function () char._catch_state = 'NEAR' end), function () return 
 						Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol_except(char, 'NEAR') < 1 end,
 						"CATCH_NEAR"))
-				:add_child(
-					btnode_createdec_cond(node_cache_behind, function () return 
+				:child(
+					bdec_cond(bdec_acomfront(node_cache_behind, function () char._catch_state = 'BEHIND' end), function () return 
 						char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'BEHIND') < 2 end,
 						"CATCH_BEHIND"))
-				:add_child(
-					node_catch
+				:child(
+					bdec_cond(bdec_acomfront(node_catch_further, function () char._catch_state = 'FUR' end), function () return 
+						is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'FUR') < 2 end,
+						"CATCHFUR"))
+				:child(
+					bdec_cond(bdec_acomfront(node_cache_behind, function () char._catch_state = 'SIDE' end), function () return 
+						char:is_on_side_of(session_current.thives[1]) and count_of_state_pol_except(char, 'SIDE') < 1 end,
+						"CATCHSIDE"))
+				:child(
+					bdec_acomfront(node_catch, function () char._catch_state = 'LAST' end)
 				)
 			)
 		)

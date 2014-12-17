@@ -85,7 +85,7 @@ btnode_ctrl = btnode:new({
 
 	type_node = '[CONTROL_NODE]',
 
-	add_child = function (self, child)
+	child = function (self, child)
 		if #(self.children) == 0 then self.children = { } end
 		table.insert(self.children, child)
 		return self
@@ -104,7 +104,7 @@ btnode_ctrl = btnode:new({
 })
 
 btnode_coroutine_ctrl = btnode_coroutine:new({
-	children = { }, add_child = btnode_ctrl.add_child,
+	children = { }, child = btnode_ctrl.child,
 
 	type_node = '[COROUTINE_CONTROL]',
 
@@ -159,6 +159,7 @@ btnode_parallel = btnode_ctrl:new({
 btnode_priority_selector = btnode_coroutine_ctrl:new({
 
 	type_node = '[CONTROL_PRIORITY]',
+	current_node = nil,
 
 	_get_first_available_node = function (self, args, start)
 		print ('PRIORITY GETTING NODE')
@@ -179,32 +180,32 @@ btnode_priority_selector = btnode_coroutine_ctrl:new({
 	end,
 
 	evaluate = function (self, args)
+		if self.current_node and self.current_node:evaluate(args) then return true end
 		node_i, node_current = self:_get_first_available_node(args, 1)
 		print ('PRIORITY EVALUATING', node_current)
+		self.current_node = node_current
 		return node_current ~= nil
 	end,
 
 	co_execute = function (self, args)
 		if #(self.children) == 0 then return bt.state.SUCCESS end
-		local node_i = 0
-		local node_current
 
 		while true do
-			node_i, node_current = self:_get_first_available_node(args, 1)
-
-			if node_current == nil then
+			if self.current_node == nil then
 				self:foo_end(args)
 				return bt.state.FAILURE
 			end
 
-			local status = node_current:execute(args)
+			local status = self.current_node:execute(args)
 			if status == bt.state.SUCCESS then
-				print("btnode_priority_selector node success ", self, node_current)
+				print("btnode_priority_selector node success ", self, self.current_node)
 				self:foo_end(args)
+				self.current_node = nil
 				do return bt.state.SUCCESS end
 			elseif status == bt.state.FAILURE then
 				self:foo_end(args)
 				print("btnode_priority_selector node failure ", self)
+				self.current_node = nil
 				return bt.state.FAILURE
 			end
 			coroutine.yield(status)
@@ -320,35 +321,8 @@ btnode_repeat = btnode_coroutine:new({
 
 btnode_create_repeat = function (count, node)
 	local ret = btnode_repeat:new()
-
 	ret._loop_count, ret._rep_node = count, node
-
 	return ret
-end
-
-btnode_condition = btnode:new({
-	_condition = function(args) return true end,
-	_check = true,
-
-	type_node = '[CONTROL_CONDITION]',
-
-	execute = function (self, args)
-		if self:_condition(args) == self._check then
-			return bt.state.SUCCESS
-		else
-			return bt.state.FAILURE
-		end
-	end
-})
-
-btnode_create_condition = function (cond, check)
-	if check == nil then check = true end
-	local node = btnode_condition:new()
-
-	node._condition = cond
-	node._check = check
-
-	return node
 end
 
 btnode_dec_cond = btnode:new({
@@ -364,9 +338,34 @@ btnode_dec_cond = btnode:new({
 	execute = function (self, args) return self._node:execute(args) end
 })
 
+btnode_dec_accom_front = btnode:new({
+	_node_main = nil, _foo_before = nil,
+
+	type_node = '[DEC_ACCFRONT]',
+
+	init = function (self, args) self._node_main:init(args) end,
+	foo_end = function (self, args) return self._node_main:foo_end(args) end,
+	
+	evaluate = function (self, args) return self._node_main:evaluate(args) end,
+	execute = function (self, args) self:_foo_before() return self._node_main:execute(args) end
+})
+
 btnode_createdec_cond = function (dnode, cond, name)
 	if name == nil then name = '' end
 	local node = btnode_dec_cond:new()
 	node._node, node._cond, node.type_node = dnode, cond, node.type_node .. ' ' .. name
 	return node
 end
+
+btnode_createdec_accomfront = function (dnode, foo, name)
+	if name == nil then name = '' end
+	local node = btnode_dec_accom_front:new()
+	node._node_main, node._foo_before, node.type_node = dnode, foo, node.type_node .. ' ' .. name
+	return node
+end
+
+bnd_priority = btnode_create_priority
+bnd_sequential = btnode_create_sequential
+bnd_repeat = btnode_create_repeat
+bdec_cond = btnode_createdec_cond
+bdec_acomfront = btnode_createdec_accomfront
