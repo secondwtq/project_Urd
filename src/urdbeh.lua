@@ -2,13 +2,14 @@ dofile('lunalogger.lua')
 
 dofile('lunabehavior.lua')
 
+cur_target_thiefid = 1
+
 function we_are_police()
 	return Env.INST_INIT == 'POL' end
 
-function thief_found()
-	do return false end
-	print ("checking theif_found .. ", session_current.thives[1].found)
-	return session_current.thives[1].found end
+function thief_found(id)
+	print ("checking theif_found .. ", session_current.thives[id].found)
+	return session_current.thives[id].found end
 
 function thief_onsight(id)
 	print("checking thief_onsight .. ", session_current.thives[id].onsight)
@@ -60,7 +61,6 @@ function find_search_pos(obj)
 	local _u = 1
 	local _v = 1
 
-	print("entering loop")
 	for _ox = 0, session_current.map_obj.width/2 do
 		for _oy = 0, session_current.map_obj.height/2 do
 			local ox = _ox * _u
@@ -262,10 +262,10 @@ if we_are_police() then
 		end
 
 		local node_search = node_search_creator(find_search_pos)
-		node_search.evaluate = function () return (thief_found() == false) end
+		node_search.evaluate = function () return (thief_found(cur_target_thiefid) == false) end
 
 		local node_search_random = node_search_creator(find_search_pos_random, false)
-		node_search_random.evaluate = function () return thief_found() == false end
+		node_search_random.evaluate = function () return thief_found(cur_target_thiefid) == false end
 
 		local node_catch = btnode_create_coroutine(function (self, args)
 			local obj = args.obj
@@ -274,7 +274,7 @@ if we_are_police() then
 
 			while true do
 				print("\tnode_catch catching...")
-				local target = get_theif_pos(0)
+				local target = get_theif_pos(cur_target_thiefid-1)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
 				set_all_unpassable(session_current.polices, obj)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target)), cache)
@@ -301,9 +301,9 @@ if we_are_police() then
 
 			while true do
 				print("\tnode_catch_lead catching lead...")
-				local target = get_theif_pos(0)
+				local target = get_theif_pos(cur_target_thiefid-1)
 				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				local lead_cell = get_lead_cell(char.pos, target, Util.get_nearest_dir(session_current.thives[1]:get_move_direction_vec_smoothed()))
+				local lead_cell = get_lead_cell(char.pos, target, Util.get_nearest_dir(session_current.thives[cur_target_thiefid]:get_move_direction_vec_smoothed()))
 				set_all_unpassable(session_current.polices, obj)
 				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(lead_cell)), cache)
 				reset_unpassable(session_current.polices)
@@ -330,10 +330,10 @@ if we_are_police() then
 
 				while true do
 					print("\tnode_catch " .. name .. " catching...")
-					local target = get_theif_pos(0)
+					local target = get_theif_pos(cur_target_thiefid-1)
 					local cache = Utility.Urd.Pathfinding.Pathfindingcache()
 					set_all_unpassable(session_current.polices, obj)
-					local target_cell = cell_callback(target, session_current.thives[1])
+					local target_cell = cell_callback(target, session_current.thives[cur_target_thiefid])
 					Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(target_cell)), cache)
 					reset_unpassable(session_current.polices)
 
@@ -343,11 +343,6 @@ if we_are_police() then
 					for i, v in ipairs(table_cache) do
 						session_current.map_obj:getcell(v:unpack()):setinflfac(3.0)
 					end
-
-					-- print('generating cache')
-					-- local table_cache = tyre.pfcache_to_table(cache)
-					-- print('cache generated')
-					-- vhere.print_vectable(table_cache)
 
 					coroutine.yield(bt.state.RUNNING)
 				end
@@ -403,23 +398,23 @@ if we_are_police() then
 				bnd_priority()
 				:child(
 					bdec_cond(bdec_acomfront(node_catch, set_state 'FRONT'), function () return
-						is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) end,
+						is_actually_front(char.pos, session_current.thives[cur_target_thiefid].pos, session_current.thives[cur_target_thiefid]:get_move_direction_vec_smoothed()) end,
 						"CATCH_ACTUALLY_FRONT"))
 				:child(
 					bdec_cond(bdec_acomfront(node_catch, set_state 'NEAR'), function () return
-						Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol_except(char, 'NEAR') < 1 end,
+						Util.distance(char.pos, session_current.thives[cur_target_thiefid].pos) <= 2 and count_of_state_pol_except(char, 'NEAR') < 1 end,
 						"CATCH_NEAR"))
 				:child(
 					bdec_cond(bdec_acomfront(node_cache_behind, set_state 'BEHIND'), function () return
-						char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'BEHIND') < 2 end,
+						char:is_behind(session_current.thives[cur_target_thiefid]) and is_actually_side(char.pos, session_current.thives[cur_target_thiefid].pos, session_current.thives[cur_target_thiefid]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'BEHIND') < 2 end,
 						"CATCH_BEHIND"))
 				:child(
 					bdec_cond(bdec_acomfront(node_catch_further, set_state 'FUR'), function () return
-						is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'FUR') < 2 end,
+						is_actually_side(char.pos, session_current.thives[cur_target_thiefid].pos, session_current.thives[cur_target_thiefid]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'FUR') < 2 end,
 						"CATCHFUR"))
 				:child(
 					bdec_cond(bdec_acomfront(node_cache_behind, set_state 'SIDE'), function () return
-						char:is_on_side_of(session_current.thives[1]) and count_of_state_pol_except(char, 'SIDE') < 1 end,
+						char:is_on_side_of(session_current.thives[cur_target_thiefid]) and count_of_state_pol_except(char, 'SIDE') < 1 end,
 						"CATCHSIDE"))
 				:child(
 					bdec_acomfront(node_catch, set_state 'LAST')
@@ -451,11 +446,11 @@ if we_are_police() then
 
 		print('')
 		print("Catch mode: ", "*"..char._catch_state.."*")
-		print("Is behind of thief: ", char:is_behind(session_current.thives[1]))
-		print("Is on side of thief: ", char:is_on_side_of(session_current.thives[1]))
-		print("Is on the exact side of thief: ", is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vector_single()))
-		print("Is in front of thief: ", char:is_in_front_of(session_current.thives[1]))
-		print("Is on the exact front of thief: ", is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()))
+		print("Is behind of thief: ", char:is_behind(session_current.thives[cur_target_thiefid]))
+		print("Is on side of thief: ", char:is_on_side_of(session_current.thives[cur_target_thiefid]))
+		print("Is on the exact side of thief: ", is_actually_side(char.pos, session_current.thives[cur_target_thiefid].pos, session_current.thives[cur_target_thiefid]:get_move_direction_vector_single()))
+		print("Is in front of thief: ", char:is_in_front_of(session_current.thives[cur_target_thiefid]))
+		print("Is on the exact front of thief: ", is_actually_front(char.pos, session_current.thives[cur_target_thiefid].pos, session_current.thives[cur_target_thiefid]:get_move_direction_vec_smoothed()))
 		print('')
 
 		statuses = statuses .. char._catch_state
@@ -463,10 +458,5 @@ if we_are_police() then
 
 	end
 
-	local t = session_current.thives[1]:get_move_direction_vector_single()
-	print("Thief 0 move vector: ", t[1], t[2])
-
-	local t_smoothed = session_current.thives[1]:get_move_direction_vec_smoothed()
-	print("Thief 0 move vector (smoothed): ", t_smoothed[1], t_smoothed[2])
 end
 end
