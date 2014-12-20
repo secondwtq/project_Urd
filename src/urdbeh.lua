@@ -81,38 +81,42 @@ function find_search_pos(obj)
 		_u = _u * -1
 	end
 
-	-- print("entering loop")
-	-- while true do
-	-- 	print("loop entered")
-	-- 	local vec_random = vhere.vector2d(math.random(), math.random())
-	-- 	print("vec random created")
-	-- 	vec_random:nom()
+end
 
-	-- 	print("vec random got")
-	-- 	local radius = math.min(session_current.map_obj.width, session_current.map_obj.height)/2
-	-- 	vec_random = vec_random * radius
-	-- 	print("vec world scaled")
+function find_search_pos_random(obj)
 
-	-- 	local vec_world = tyre.coord_return(vhere.vector2d(obj.pos[1], obj.pos[2]), vhere.vector2d(0, 1), vec_random)
+	while true do
 
-	-- 	print("vec world got")
-	-- 	vec_world.x = math.floor(vec_world.x)
-	-- 	vec_world.y = math.floor(vec_world.y)
+		local random_selection = math.random(0, 4)
+		if random_selection == 4 then random_selection = 3.99 end
+		random_selection = math.floor(random_selection)
 
-	-- 	local cell = session_current.map_obj:getcell(vec_world:unpack())
+		local random_ratio = math.random()
+		local cell_pos = vhere.vector2d(math.min(session_current.map_obj.width-1, session_current.sight_pol),
+										math.min(session_current.map_obj.height-1, session_current.sight_pol))
 
-	-- 	print("cell found")
-	-- 	if cell then
+		if random_selection % 2 == 0 then
+			cell_pos.x = math.floor(random_ratio * session_current.map_obj.width)
+		else
+			cell_pos.y = math.floor(random_ratio * session_current.map_obj.height)
+		end
 
-	-- 		local passable = cell:ispassable()
+		if random_selection == 3 then
+			cell_pos.x = math.min(session_current.map_obj.width-session_current.sight_pol, session_current.map_obj.width-1)
+		elseif random_selection == 2 then
+			cell_pos.y = math.min(session_current.map_obj.height-session_current.sight_pol, session_current.map_obj.height-1)
+		end
 
-	-- 		if passable then
-	-- 			print("returning ", vec_world:unpack())
-	-- 			return { vec_world.x, vec_world.y }
-	-- 		end
+		local cell = session_current.map_obj:getcell(cell_pos:unpack())
+		if cell then
+			local passable = cell:ispassable()
 
-	-- 	end
-	-- end
+			if passable and cell_pos.x ~= obj.pos[1] and cell_pos.y ~= obj.pos[2] then
+				print("find_search_pos_random returning ", cell_pos.x, cell_pos.y, "using selection ", random_selection)
+				return { cell_pos.x, cell_pos.y }
+			end
+		end
+	end
 
 end
 
@@ -217,41 +221,51 @@ if we_are_police() then
 
 		char._catch_state = 'NONE'
 
-		local node_search = btnode_create_coroutine(function (self, args)
-			local obj = args.obj
-			print("Searching for target...")
-			local search_target = find_search_pos(obj)
-			print("Search dest set_: ", search_target[1], search_target[2])
-			while true do
+		local node_search_creator = function (search_foo, once)
+			return btnode_create_coroutine(function (self, args)
+				if once == nil then once = true end
 
-				local pos_obj = obj.pos
-				-- if reached dest or dest is not passable, then choose another dest
-				if pos_obj[1] == search_target[1] and pos_obj[2] == search_target[2] or
-						session_current.map_obj:getcell(table.unpack(search_target)):ispassable() == false then
-					search_target = find_search_pos(obj)
+				local obj = args.obj
+				print("Searching for target...")
+				local search_target = search_foo(obj)
+				print("Search dest set: ", search_target[1], search_target[2])
+				while true do
+
+					local pos_obj = obj.pos
+					-- if reached dest or dest is not passable, then choose another dest
+					if ((not once) and pos_obj[1] == search_target[1] and pos_obj[2] == search_target[2]) or
+							session_current.map_obj:getcell(table.unpack(search_target)):ispassable() == false then
+						search_target = search_foo(obj)
+						print('resetting dest set: ', search_target[1], search_target[2])
+					elseif pos_obj[1] == search_target[1] and pos_obj[2] == search_target[2] then
+						return bt.state.SUCCESS
+					end
+
+					print("node_search searching")
+					local cache = Utility.Urd.Pathfinding.Pathfindingcache()
+					set_all_unpassable(session_current.polices, obj)
+					print("node_search pathfinding")
+					Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(search_target)), cache)
+					reset_unpassable(session_current.polices)
+					if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
+
+					local table_cache = tyre.pfcache_to_table(cache)
+					for i, v in ipairs(table_cache) do
+						session_current.map_obj:getcell(v:unpack()):setinflfac(4.0)
+					end
+
+					print("node_search yielding")
+					coroutine.yield(bt.state.RUNNING)
 				end
+				return bt.state.FAILURE
+			end)
+		end
 
-				print("node_search searching")
-				local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-				set_all_unpassable(session_current.polices, obj)
-				print("node_search pathfinding")
-				Utility.Urd.Pathfinding.find_8(obj:getcell(session_current.map_obj), session_current.map_obj:getcell(table.unpack(search_target)), cache)
-				reset_unpassable(session_current.polices)
-				print("node_search moving")
-				if not cache:ended() then obj:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
-
-
-				local table_cache = tyre.pfcache_to_table(cache)
-				for i, v in ipairs(table_cache) do
-					session_current.map_obj:getcell(v:unpack()):setinflfac(3.0)
-				end
-
-				print("node_search yielding")
-				coroutine.yield(bt.state.RUNNING)
-			end
-			return bt.state.FAILURE
-		end)
+		local node_search = node_search_creator(find_search_pos)
 		node_search.evaluate = function () return (thief_found() == false) end
+
+		local node_search_random = node_search_creator(find_search_pos_random, false)
+		node_search_random.evaluate = function () return thief_found() == false end
 
 		local node_catch = btnode_create_coroutine(function (self, args)
 			local obj = args.obj
@@ -381,6 +395,9 @@ if we_are_police() then
 			bnd_sequential()
 			:child(
 				bdec_acomfront(node_search, set_state 'INITIAL')
+			)
+			:child(
+				bdec_acomfront(node_search_random, set_state 'RANDOM_SEARCH')
 			)
 			:child(
 				bnd_priority()
