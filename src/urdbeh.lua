@@ -6,6 +6,7 @@ function we_are_police()
 	return Env.INST_INIT == 'POL' end
 
 function thief_found()
+	do return false end
 	print ("checking theif_found .. ", session_current.thives[1].found)
 	return session_current.thives[1].found end
 
@@ -67,7 +68,7 @@ function find_search_pos(obj)
 
 			local search_target = { search_target_org[1]+ox, search_target_org[2]+oy }
 
-			if search_target[1] < 0 or search_target[1] > session_current.map_obj.width	or 
+			if search_target[1] < 0 or search_target[1] > session_current.map_obj.width	or
 				search_target[2] < 0 or search_target[2] > session_current.map_obj.width then break end
 
 			local cell = session_current.map_obj:getcell(table.unpack(search_target))
@@ -143,7 +144,7 @@ function get_furthest_cell(current, direction, self_pos, max_step, enable_bound,
 	while true do
 
 		if i >= max_step then
-			local cell = session_current.map_obj:getcell(unpack(cur)) 
+			local cell = session_current.map_obj:getcell(unpack(cur))
 			print ("\t\tget_furthest_cell returning max step")
 			if (not cell) or (not cell:ispassable()) then return cur
 			else return prev_cur end
@@ -161,7 +162,7 @@ function get_furthest_cell(current, direction, self_pos, max_step, enable_bound,
 			else return prev_cur end
 		end
 
-		if enable_bound and ((Util.equ_2dpos(direction, {1, 0}) and cur[1] >= self_pos[1]) or 
+		if enable_bound and ((Util.equ_2dpos(direction, {1, 0}) and cur[1] >= self_pos[1]) or
 					(Util.equ_2dpos(direction, {-1, 0}) and cur[1] <= self_pos[1]) or
 					(Util.equ_2dpos(direction, {0, 1}) and cur[2] >= self_pos[2]) or
 					(Util.equ_2dpos(direction, {0, -1}) and cur[2] <= self_pos[2])) then
@@ -223,7 +224,10 @@ if we_are_police() then
 			print("Search dest set_: ", search_target[1], search_target[2])
 			while true do
 
-				if session_current.map_obj:getcell(table.unpack(search_target)):ispassable() == false then
+				local pos_obj = obj.pos
+				-- if reached dest or dest is not passable, then choose another dest
+				if pos_obj[1] == search_target[1] and pos_obj[2] == search_target[2] or
+						session_current.map_obj:getcell(table.unpack(search_target)):ispassable() == false then
 					search_target = find_search_pos(obj)
 				end
 
@@ -245,7 +249,7 @@ if we_are_police() then
 				print("node_search yielding")
 				coroutine.yield(bt.state.RUNNING)
 			end
-			return bt.state.SUCCESS
+			return bt.state.FAILURE
 		end)
 		node_search.evaluate = function () return (thief_found() == false) end
 
@@ -371,9 +375,7 @@ if we_are_police() then
 
 		print("initing brain...")
 
-		local function set_state(state)
-			return function() char._catch_state = state end
-		end
+		local function set_state(state) return function() char._catch_state = state end end
 
 		char.brain = bnd_repeat(512,
 			bnd_sequential()
@@ -383,23 +385,23 @@ if we_are_police() then
 			:child(
 				bnd_priority()
 				:child(
-					bdec_cond(bdec_acomfront(node_catch, set_state 'FRONT'), function () return 
+					bdec_cond(bdec_acomfront(node_catch, set_state 'FRONT'), function () return
 						is_actually_front(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) end,
 						"CATCH_ACTUALLY_FRONT"))
 				:child(
-					bdec_cond(bdec_acomfront(node_catch, set_state 'NEAR'), function () return 
+					bdec_cond(bdec_acomfront(node_catch, set_state 'NEAR'), function () return
 						Util.distance(char.pos, session_current.thives[1].pos) <= 2 and count_of_state_pol_except(char, 'NEAR') < 1 end,
 						"CATCH_NEAR"))
 				:child(
-					bdec_cond(bdec_acomfront(node_cache_behind, set_state 'BEHIND'), function () return 
+					bdec_cond(bdec_acomfront(node_cache_behind, set_state 'BEHIND'), function () return
 						char:is_behind(session_current.thives[1]) and is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'BEHIND') < 2 end,
 						"CATCH_BEHIND"))
 				:child(
-					bdec_cond(bdec_acomfront(node_catch_further, set_state 'FUR'), function () return 
+					bdec_cond(bdec_acomfront(node_catch_further, set_state 'FUR'), function () return
 						is_actually_side(char.pos, session_current.thives[1].pos, session_current.thives[1]:get_move_direction_vec_smoothed()) and count_of_state_pol_except(char, 'FUR') < 2 end,
 						"CATCHFUR"))
 				:child(
-					bdec_cond(bdec_acomfront(node_cache_behind, set_state 'SIDE'), function () return 
+					bdec_cond(bdec_acomfront(node_cache_behind, set_state 'SIDE'), function () return
 						char:is_on_side_of(session_current.thives[1]) and count_of_state_pol_except(char, 'SIDE') < 1 end,
 						"CATCHSIDE"))
 				:child(
