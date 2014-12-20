@@ -27,8 +27,8 @@ print('Unknown host type!')
 
 end
 
-Environment.INST_INIT = "POL"
-Environment.SELF_PORT = 31002	-- will be inited by host with main.init()
+Environment.INST_INIT = "THI"
+Environment.SELF_PORT = 31001	-- will be inited by host with main.init()
 Environment.TEAMNAME = "FLYIT"
 
 return Environment

@@ -26,9 +26,6 @@ function init(port, init_inst, teamname)
 	Env.TEAMNAME = teamname and teamname or Env.TEAMNAME
 
 	Env.Send(string.format("%s(%s, %d)", Env.INST_INIT, Env.TEAMNAME, Env.SELF_PORT))
-
-	-- init dummy thief, for automatic testing
-	if Env.INST_INIT == "POL" then Env.SendTo("URD", "localhost", 31001) end
 end
 
 -- interface, react to instructions
@@ -93,7 +90,7 @@ function inst_parser_ini(inst)
 		-- changed in CPath
 	Utility.Urd.Pathfinding.pf_init(session_current.map_obj)
 
-	urdpol_init()
+	urdthi_init()
 
 	-- print debug data
 	print(session_current:debug_data())
@@ -167,14 +164,7 @@ function inst_parser_inf(inst)
 
 	------------------------------------------------------------------------------------------------------------------------
 
-	-- -- changed in CPath
-	-- for k, v in ipairs(session_current.polices) do
-	-- 	local cache = Utility.Urd.Pathfinding.Pathfindingcache()
-	-- 	Utility.Urd.Pathfinding.find(v:getcell(session_current.map_obj), session_current.map_obj:getcell(6, 12), cache)
-	-- 	if not cache:ended() then v:move(directions.get_direction(cache:getCur():getpos(), cache:next():getpos())) end
-	-- end
-
-	urdpol_tick()
+	urdthi_tick()
 
 	------------------------------------------------------------------------------------------------------------------------
 

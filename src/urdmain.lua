@@ -28,7 +28,7 @@ function init(port, init_inst, teamname)
 	Env.Send(string.format("%s(%s, %d)", Env.INST_INIT, Env.TEAMNAME, Env.SELF_PORT))
 
 	-- init dummy thief, for automatic testing
-	if Env.INST_INIT == "POL" then Env.SendTo("URD", "localhost", 31001) end
+	--if Env.INST_INIT == "POL" then Env.SendTo("URD", "localhost", 31001) end
 end
 
 -- interface, react to instructions
