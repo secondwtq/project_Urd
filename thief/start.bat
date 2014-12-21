@@ -1,1 +1,0 @@
-main.exe -u urdmain.lua
