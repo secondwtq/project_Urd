@@ -170,7 +170,7 @@ function inst_parser_inf(inst)
 
 	print(session_current:debug_data())
 	-- changed in CPath
-	print(Util.map_debug_data(session_current.map_obj))
+	--print(Util.map_debug_data(session_current.map_obj))
 
 
 	-- send move instruction
