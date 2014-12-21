@@ -113,6 +113,8 @@ function find_search_pos_random(obj)
 
 	while true do
 
+		math.randomseed(tostring(os.time()):reverse():sub(1, 6))
+
 		local random_selection = math.random(0, 4)
 		if random_selection == 4 then random_selection = 3.99 end
 		random_selection = math.floor(random_selection)
