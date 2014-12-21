@@ -11,6 +11,8 @@ Util = require 'ubtutil'
 vhere = require 'Vhere'
 tyre = require 'tyre'
 
+influ = require 'influ'
+
 session_current = nil
 
 dofile('urdbeh_pol.lua')

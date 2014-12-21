@@ -2,8 +2,6 @@ dofile('lunalogger.lua')
 
 dofile('lunabehavior.lua')
 
-local influ = require 'influ'
-
 function we_are_thieves()
 	return Env.INST_INIT == 'THI' end
 
