@@ -2,6 +2,8 @@ dofile('lunalogger.lua')
 
 dofile('lunabehavior.lua')
 
+local influ = require 'influ'
+
 cur_target_thiefid = 1
 
 function we_are_police()
@@ -24,6 +26,20 @@ end
 function thief_onsight(id)
 	print("checking thief_onsight .. ", session_current.thives[id].onsight)
 	return session_current.thives[id].onsight
+end
+
+function get_polices_onsight()
+
+	local ret = { }
+
+	for i, police in ipairs(session_current.polices) do
+		if police.onsight then
+			print('police: ', police.id, 'onsight')
+			table.insert(ret, police)
+		end
+	end
+
+	return ret
 end
 
 function get_theif_pos(id)
@@ -304,6 +320,59 @@ if we_are_thieves() then
 			return bt.state.SUCCESS
 		end)
 
+		local node_influ_move = btnode_create_coroutine(function (self, args)
+			local obj = args.obj
+			print('entering influmove mode...')
+
+			while true do
+				obj.influ_map:clear_map()
+				obj.influ_map:clear_influnode()
+
+				local police_onsight = get_polices_onsight()
+				print(#police_onsight, "polices onsight")
+
+				for i, police in ipairs(police_onsight) do
+					obj.influ_map:add_node(vhere.vector2d(table.unpack(police.pos)), vhere.vector2d(table.unpack(obj.pos)))
+				end
+
+				local dir_move = { {0, 1}, {1, 0}, {0, -1}, {-1, 0} }
+				local pos_move = { }
+
+				for i, dir in ipairs(dir_move) do
+					pos_move[i] = vhere.vector2d(table.unpack(dir)) + vhere.vector2d(table.unpack(obj.pos))
+				end
+
+				for i, pos in ipairs(pos_move) do print (pos.x, pos.y, obj.influ_map:get_value(pos)) end
+
+				local pos_move_filtered = { }
+				for i, pos in ipairs(pos_move) do
+					if session_current.map_obj:getcell(pos:unpack()):ispassable() then
+						table.insert(pos_move_filtered, {i, pos})
+					end
+				end
+
+				print('filtered result:')
+				for i, pos in ipairs(pos_move_filtered) do print (pos[2].x, pos[2].y, obj.influ_map:get_value(pos[2])) end
+
+				local pos_move_min = obj.influ_map:get_value(pos_move_filtered[1][2])
+				local pos_move_idx = pos_move_filtered[1][1]
+				print("initial move idx:", pos_move_idx)
+				for i, pos in ipairs(pos_move_filtered) do
+					if obj.influ_map:get_value(pos[2]) < pos_move_min then
+						pos_move_idx = pos[1]
+						pos_move_min = obj.influ_map:get_value(pos[2])
+					end
+				end
+
+				print("move idx:", pos_move_idx, "direction: ", table.unpack(dir_move[pos_move_idx]))
+				obj:move(directions.from_vec_to_dir(dir_move[pos_move_idx]))
+
+				coroutine.yield(bt.state.RUNNING)
+			end
+
+			return bt.state.SUCCESS
+		end)
+
 		local node_creator = function (cell_callback, name)
 			return btnode_create_coroutine(function (self, args)
 				local obj = args.obj
@@ -341,28 +410,11 @@ if we_are_thieves() then
 			return behind
 		end, "BEHIND")
 
-		local node_catch_further = node_creator(function (targetpos, targetobj)
-			local lead_cell = get_lead_cell(char.pos, targetpos, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()))
-			print("catch further lead ", lead_cell[1], lead_cell[2])
-			local further = get_furthest_cell(lead_cell, targetobj:get_move_direction_vec_smoothed(), char.pos, 2)
-			print("catch further ", further[1], further[2])
-			return further
-		end, "FURTHER")
-
-		local node_catch_last = node_creator(function (targetpos, targetobj)
-			local lead_cell = get_lead_cell(char.pos, targetpos, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()))
-			local furthest = get_furthest_cell(lead_cell, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()), char.pos, 2, false, false)
-			print("catch last ", furthest[1], furthest[2])
-			return furthest
-		end, "lAST")
-
-		local node_catch_last_random = node_creator(function (targetpos, targetobj)
-			local lead_cell = get_lead_cell(char.pos, targetpos, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()))
-			local furthest = get_furthest_cell(lead_cell, Util.get_nearest_dir(targetobj:get_move_direction_vec_smoothed()), char.pos, 2, false, false)
-			local ret = get_random_cell(furthest, 2)
-			print("catch last random ", ret[1], ret[2])
-			return ret
-		end, "lAST_RANDOM")
+		print('initing influmap...')
+		char.influ_map = influ.influmap:new()
+		char.influ_map:create_map(session_current.map_obj.width, session_current.map_obj.height)
+		char.influ_map:clear_map()
+		char.influ_map:clear_influnode()
 
 		print("initing brain...")
 
@@ -379,7 +431,7 @@ if we_are_thieves() then
 			:child(
 				bnd_priority()
 				:child(
-					bdec_acomfront(node_catch, set_state 'LAST')
+					bdec_acomfront(node_influ_move, set_state 'ESCAPING')
 				)
 			)
 		)
